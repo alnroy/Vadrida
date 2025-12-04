@@ -1,0 +1,394 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vadrida Property Valuations | Professional Property Assessment Services</title>
+    <meta name="description" content="Professional property valuation services partnering with leading banks for accurate assessments, market analysis, and expert consultation.">
+    <meta name="keywords" content="property valuation, real estate assessment, property appraisal, market value, Vadrida, HDFC, SIB, DCB">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'royal-blue': {
+                            50: '#e6f0ff',
+                            100: '#cce0ff',
+                            200: '#99c2ff',
+                            300: '#66a3ff',
+                            400: '#3385ff',
+                            500: '#0066ff',
+                            600: '#0052cc',
+                            700: '#003d99',
+                            800: '#002966',
+                            900: '#001433',
+                        },
+                        'accent-gold': '#FFD700',
+                    },
+                    fontFamily: {
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                        'opensans': ['Open Sans', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #052a62 0%, #033175 100%);
+        }
+        .card-3d {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .card-3d:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .property-card {
+            transition: all 0.3s ease;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .property-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 51, 153, 0.2);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-left: 4px solid #022558;
+        }
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: #FFD700;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+        .backgound-logo{
+            background-image: url('/static/images/VADRIDA LOGO.png');
+            background-size: 1200px;
+            background-position: center;
+            opacity: 0.8;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body class="font-opensans">
+    <!-- Navigation -->
+    <header class="sticky top-0 z-50 bg-white shadow-lg">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class=" bg-white rounded-full flex items-center justify-center">
+                         <img src="{% static 'images/VADRIDA LOGO.png' %}" alt="Logo" width="200px">
+                    </div>
+                </div>
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{% url 'core:home' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">Home</a>
+                <a href="{% url 'core:services' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">Services</a>
+                <a href="{% url 'core:work' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">How It Works</a>
+                <a href="{% url 'core:contact' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">Contact</a>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuButton" class="md:hidden text-royal-blue-700">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-4">
+            <a href="{% url 'core:home' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Home</a>
+            <a href="{% url 'core:services' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Services</a>
+            <a href="{% url 'core:work' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">How It Works</a>
+            <a href="{% url 'core:contact' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Contact</a>
+        </div>
+    </nav>
+</header>
+
+<!-- About Section -->
+<section id="about" class="py-20 bg-gray">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="font-montserrat text-4xl font-bold text-gray-800 mb-4">About Vadrida</h2>
+                <div class="w-24 h-1 bg-accent-gold mx-auto mb-6"></div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-8 md:p-12 shadow-xl">
+                <div class="grid md:grid-cols-2 gap-8 items-center mb-8">
+                    <div>
+                        <h3 class="font-montserrat text-2xl font-bold text-gray-800 mb-4">Our Mission</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">
+                            Founded by <span class="font-semibold text-royal-blue-600">Sanjay Sabu</span>, Vadrida Property Valuations has established itself as a trusted partner for major banks and financial institutions across India.
+                        </p>
+                        <p class="text-gray-600 leading-relaxed">
+                            We specialize in providing accurate, comprehensive property valuations that help banks make informed lending decisions. Our team of certified valuers conducts thorough on-site inspections, capturing detailed property data, documentation, and imagery to deliver reports that meet the highest industry standards.
+                        </p>
+                    </div>
+                    <div>
+                        <div class="bg-royal-blue-50 rounded-xl p-6">
+                            <h4 class="font-montserrat text-xl font-bold text-gray-800 mb-4">Why Banks Trust Us</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-accent-gold mt-1 mr-3"></i>
+                                    <span class="text-gray-700">Certified and experienced valuation professionals</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-accent-gold mt-1 mr-3"></i>
+                                    <span class="text-gray-700">Comprehensive on-site property inspections</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-accent-gold mt-1 mr-3"></i>
+                                    <span class="text-gray-700">Detailed documentation and photography</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-accent-gold mt-1 mr-3"></i>
+                                    <span class="text-gray-700">Seamless integration with bank portals</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-accent-gold mt-1 mr-3"></i>
+                                    <span class="text-gray-700">Fast turnaround with accurate results</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-royal-blue-900 text-white py-12">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Company Info -->
+            <div>
+               <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class=" bg-white flex items-center justify-center">
+                         <img src="{% static 'images/VADRIDA LOGO.png' %}" alt="Logo" width="250px">
+                    </div>
+                </div>
+                <p class="text-gray-400 mb-6">
+                    Professional property valuation services partnering with leading banks across India. Founded by Sanjay Sabu.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-royal-blue-600 transition-colors">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-royal-blue-600 transition-colors">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-royal-blue-600 transition-colors">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div>
+                <h4 class="font-montserrat text-lg font-bold mb-6">Quick Links</h4>
+                <ul class="space-y-3">
+                    <li><a href="{% url 'core:home' %}" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                    <li><a href="{% url 'core:services' %}" class="text-gray-400 hover:text-white transition-colors">services</a></li>
+                    <li><a href="{% url 'core:work' %}" class="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                </ul>
+            </div>
+
+            <!-- Services -->
+            <div>
+                <h4 class="font-montserrat text-lg font-bold mb-6">Our Services</h4>
+                <ul class="space-y-3">
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Residential Valuation</a></li>
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Commercial Valuation</a></li>
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Portfolio Analysis</a></li>
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">On-Site Inspection</a></li>
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Bank Portal Integration</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact Info -->
+            <div>
+                <h4 class="font-montserrat text-lg font-bold mb-6">Contact Us</h4>
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <i class="fas fa-map-marker-alt text-royal-blue-400 mt-1 mr-3"></i>
+                        <span class="text-gray-400">Kundannoor, Kochi, Kerala, India</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-phone text-royal-blue-400 mr-3"></i>
+                        <span class="text-gray-400">+91.....</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-envelope text-royal-blue-400 mr-3"></i>
+                        <span class="text-gray-400">vadrida.com</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-800 mt-12 pt-8 text-center">
+            <p class="text-gray-400">
+                © 2024 Vadrida Property Valuations. Founded by Sanjay Sabu. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Mobile menu toggle
+    const mobileMenuButton = document.getElementById("mobileMenuButton");
+    const mobileMenu = document.getElementById("mobileMenu");
+
+    mobileMenuButton.addEventListener("click", function() {
+        mobileMenu.classList.toggle("hidden");
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener("click", function(event) {
+        if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+            mobileMenu.classList.add("hidden");
+        }
+    });
+
+    // Smooth scroll for anchor links and close mobile menu
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute("href");
+            
+            // Close mobile menu
+            mobileMenu.classList.add("hidden");
+            
+            if (targetId === "#" || targetId === "#home") {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+                return;
+            }
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                const headerOffset = 80;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+            }
+        });
+    });
+
+    // Active navigation highlighting
+    window.addEventListener('scroll', () => {
+        let current = '';
+        const sections = document.querySelectorAll('section[id]');
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= (sectionTop - 100)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Form submission handling
+    document.querySelectorAll("button[type='button'], a.bg-white, a.glass-effect").forEach(button => {
+        button.addEventListener("click", function(e) {
+            if (this.textContent.includes("Send Message")) {
+                e.preventDefault();
+                alert("Thank you for your interest! Our team will contact you shortly.");
+            }
+        });
+    });
+
+    // Add hover effects to all interactive elements
+    document.querySelectorAll(".property-card, .card-3d, button").forEach(element => {
+        element.addEventListener("mouseenter", function() {
+            this.style.cursor = "pointer";
+        });
+    });
+
+    // Initialize animations on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px"
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '0';
+                entry.target.style.transform = 'translateY(20px)';
+                entry.target.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        });
+    }, observerOptions);
+
+    // Observe all cards and sections
+    document.querySelectorAll(".card-3d, .property-card, .stat-card").forEach(card => {
+        observer.observe(card);
+    });
+</script>
+</body>
+</html>
