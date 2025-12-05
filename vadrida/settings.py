@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'coreapi',
+    'django_ratelimit',
     'crispy_forms',
 ]
 
@@ -52,7 +53,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+MIDDLEWARE+= [ 
+    'coreapi.middleware.LoginRequiredMiddleware'
+]
 ROOT_URLCONF = 'vadrida.urls'
 BASE_DIR=Path(__file__).resolve().parent.parent
 
@@ -132,11 +135,30 @@ DEFAULT_FROM_EMAIL='noreply@vadrida.com'
 ADMINS=[('Admin','admin@vadrida.com')]
 CRISPY_TEMPLATE_PACK='bootstrap5'
 
-
-LOGIN_REDIRECT_URL = 'core:dashboard'
-LOGOUT_REDIRECT_URL = 'coreapi:login'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ]
 }
+
+
+SESSION_COOKIE_SECURE = True      # Only HTTPS
+CSRF_COOKIE_SECURE = True         # Only HTTPS
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 43200  # 12 hours
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
+SESSION_SAVE_EVERY_REQUEST = True
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  # local Redis
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000"
+]

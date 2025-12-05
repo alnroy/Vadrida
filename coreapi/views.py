@@ -1,42 +1,85 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import logout
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.hashers import check_password
 from .models import UserProfile
-from django.contrib.auth.hashers import  check_password
+import json
+from django.shortcuts import render, redirect
+from .decorators import user_logged_in
+from django.middleware.csrf import get_token
+from django_ratelimit.decorators import ratelimit
 
 
 def login_page(request):
+    if request.session.get("user_name"):
+        return redirect("coreapi:dashboard")
     return render(request, "login.html")
 
-def login_user(request):
+@user_logged_in
+def dashboard(request):
+    if not request.session.get("user_name"):
+        return redirect("login_page")
+    
+    return render(request, "dashboard.html")
+
+
+@csrf_protect
+@ratelimit(key="ip", rate="5/m", block=True)
+def login_api(request):
+    get_token(request) 
     if request.method != "POST":
-        return redirect("login.html")
+        return JsonResponse({"error": "POST request required"}, status=400)
 
-    email = request.POST.get("email")
-    user_id = request.POST.get("user_id")
-    password=request.POST.get("passsword")
+    # Parse JSON properly
     try:
-        user = UserProfile.objects.get(email=email, id=user_id)
+        data = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError as e:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
-        # Check hashed password
-        if not check_password(password, user.password):
-            messages.error(request, "Incorrect password")
-            return redirect("login.html")
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
 
-        # Save session
-        request.session["user_id"] = user.id
-        request.session["user_name"] = user.user_name
-        request.session["user_role"] = user.role
+    if not email or not password:
+        return JsonResponse({"error": "Email and password required"}, status=400)
 
-        messages.success(request, "Login successful!")
-        return redirect("dashboard.html")
-
-
+    # Verify user exists
+    try:
+        user = UserProfile.objects.get(email=email)
     except UserProfile.DoesNotExist:
-        messages.error(request, "Invalid email or user ID")
-        return redirect("login.html")
+        return JsonResponse({"error": "Invalid email or password"}, status=401)
+
+    # Verify password
+    if not check_password(password, user.password):
+        return JsonResponse({"error": "Invalid email or password"}, status=401)
+
+    # Save session
+    request.session["user_id"] = user.id
+    request.session["user_name"] = user.user_name
+    request.session["email"] = user.email
+    request.session["role"]=user.role
+    request.session.set_expiry(60 * 60 * 12)  # 12 hours
+    
+    # Make sure session is saved
+    request.session.modified = True
+
+    return JsonResponse({
+        "success": True,
+        "message": "Login successful",
+        "redirect": "/coreapi/dashboard/"
+    }, status=200)
 
 
-def logout_user(request):
-    logout(request)
-    return redirect("login.html")
+def logout_api(request):
+    request.session.flush()
+    return JsonResponse({"message": "Logged out successfully"})
+
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def admin_dashboard(request):
+    if not request.session.get("user_role") == "admin":
+        return redirect("dashboard")  # redirect non-admins
+    users = UserProfile.objects.all()
+    return render(request, "dashboard/admin_dashboard.html", {"users": users})

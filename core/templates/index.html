@@ -116,6 +116,11 @@
             opacity: 0.8;
             background-repeat: no-repeat;
         }
+          .login {
+            background: rgba(26, 26, 108, 0.682);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body class="font-opensans">
@@ -140,6 +145,7 @@
             </div>
 
             <!-- Mobile Menu Button -->
+            <a href="{% url 'coreapi:login_page' %}" class="login border border-white/30 text-black px-4 py-2 rounded-full font-montserrat font-semibold hover:bg-royal-blue-500 transition-colors text-lg">Login</a>
             <button id="mobileMenuButton" class="md:hidden text-royal-blue-700">
                 <i class="fas fa-bars text-2xl"></i>
             </button>
@@ -152,7 +158,6 @@
             <a href="{% url 'core:about' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">About Us</a>
             <a href="{% url 'core:work' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">How It Works</a>
             <a href="{% url 'core:contact' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Contact</a>
-            <a href="{% url 'coreapi:login_page' %}" class="glass-effect border border-white/30 text-white px-8 py-3 rounded-full font-montserrat font-semibold hover:bg-royal-blue-500 transition-colors text-lg">Login</a>
         </div>
     </nav>
 </header>

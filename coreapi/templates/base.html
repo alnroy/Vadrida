@@ -126,9 +126,6 @@
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-8">
                 <a href="{% url 'core:home' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">Home</a>
-                <a href="{% url 'core:services' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">Services</a>
-                <a href="{% url 'core:work' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">How It Works</a>
-                <a href="{% url 'core:about' %}" class="nav-link font-montserrat font-medium text-gray-700 hover:text-royal-blue-600 transition-colors">About Us</a>
             </div>
 
             <!-- Mobile Menu Button -->
@@ -139,60 +136,11 @@
 
         <!-- Mobile Navigation -->
         <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-4">
-            <a href="{% url 'core:home' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Home</a>
-            <a href="{% url 'core:services' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Services</a>
-            <a href="{% url 'core:work' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">How It Works</a>
-            <a href="{% url 'core:about' %}" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">About Us</a>
+            <a href="#" class="block font-montserrat font-medium text-gray-700 hover:text-royal-blue-600">Home</a>
         </div>
     </nav>
 </header>
 {% csrf_token %}
-
-<section class="backgound-logo min-h-screen flex items-center justify-center bg-royal-blue-800 relative overflow-hidden">
-
-
-    <!-- Glass Card -->
-    <div class="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-3xl shadow-xl max-w-md w-full">
-
-        <h2 class="text-center text-3xl font-montserrat text-white font-bold mb-8">
-            Welcome 
-        </h2>
-
-        <!-- Login Form -->
-        <form id="loginForm">
-            {% csrf_token %}
-
-            <div>
-                <label class="text-white font-semibold">Email</label>
-                <input type="email" id="email"
-                       class="w-full mt-2 p-3 rounded-xl bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none"
-                       placeholder="Enter your email" required>
-            </div>
-
-            <div><br>
-                <label class="text-white font-semibold">Password</label>
-                <input type="password" id="password"
-                       class="w-full mt-2 p-3 rounded-xl bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none"
-                       placeholder="Enter your password" required>
-            </div>
-<br>
-            <button type="submit"
-                class="w-full py-3 bg-accent-gold text-black font-semibold rounded-xl hover:bg-royal-blue-600 hover:text-white transition">
-                Login
-            </button>
-            {% if messages %}
-                {% for msg in messages %}
-                    <p class="text-red-500 text-center">{{msg}}</p>
-                {% endfor %}
-            {% endif %}
-        </form>
-<!-- 
-        <p class="text-center text-white/80 mt-6">
-            Don’t have an account? <a href="#" class="text-accent-gold">Register</a>
-        </p> -->
-
-    </div>
-</section>
 
 <!-- Footer -->
 <footer class="bg-royal-blue-900 text-white py-12">
@@ -272,118 +220,3 @@
         </div>
     </div>
 </footer>
-<script>
-    // Single getCookie function
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
-                cookie = cookie.trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Mobile menu toggle
-    const mobileMenuButton = document.getElementById("mobileMenuButton");
-    const mobileMenu = document.getElementById("mobileMenu");
-
-    mobileMenuButton.addEventListener("click", function() {
-        mobileMenu.classList.toggle("hidden");
-    });
-
-    // Close mobile menu when clicking outside
-    document.addEventListener("click", function(event) {
-        if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
-            mobileMenu.classList.add("hidden");
-        }
-    });
-
-    // Login form submission
-    document.getElementById("loginForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
-
-        const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value;
-        const csrftoken = getCookie('csrftoken');
-
-        console.log("Submitting login...");
-
-        try {
-            const response = await fetch("/coreapi/login/api/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken,
-                },
-                body: JSON.stringify({
-                    email,
-                    password
-                }),
-                credentials: "include"
-            });
-            const text = await response.text();
-       
-            console.log("Raw response:", text);
-
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (err) {
-                console.error("JSON parse error:", err);
-                alert("Server returned invalid response. Please check console.");
-                return;
-            }
-
-            console.log("Parsed data:", data);
-
-            if (response.ok && data.success) {
-                console.log("Login successful, redirecting...");
-                alert("Login Successful ! ")
-                window.location.href = data.redirect;
-            } else {
-                alert(data.error || "Login failed. Please try again.");
-            }
-        } catch (error) {
-            console.error("Fetch error:", error);
-            alert("Network error. Please check your connection.");
-        }
-    });
-
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener("click", function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute("href");
-            
-            mobileMenu.classList.add("hidden");
-            
-            if (targetId === "#" || targetId === "#home") {
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth"
-                });
-                return;
-            }
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                const headerOffset = 80;
-                const elementPosition = targetElement.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth"
-                });
-            }
-        });
-    });
-</script>
-</body>
-</html>
