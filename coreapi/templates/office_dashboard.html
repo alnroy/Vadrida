@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Office Dashboard — Vadrida{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* visual helpers (keeps your theme) */
+  .analyse-btn { background: linear-gradient(90deg,#0066ff,#3385ff); color: white; }
+  .file-info { max-height: calc(100vh - 220px); overflow-y:auto; padding:10px; }
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 70;
+    color: white;
+    gap: 12px;
+    flex-direction: column;
+  }
+  .spinner {
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    border:8px solid rgba(255,255,255,0.15);
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Table-like layout tweaks */
+  .dashboard-grid { grid-template-columns: 24% 52% 24%; }
+  .thumb-item { min-width:150px; height:170px; border-radius:8px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.08); background:#fff; cursor:pointer; }
+  .pdf-frame { width:100%; height:100%; border:0; padding-left: 20px;}
+  .file-list-scroll { max-height: calc(100vh - 220px); overflow-y:auto; }
+
+  /* Modal centering */
+  #fullscreenModal { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+  #fullscreenModal.active { display: flex; }
+  .modal-box { width: 92%; height: 92%; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,0.4); }
+  #fullscreenModal .modal-inner { height: calc(100% - 64px); }
+
+  /* small responsive tweak */
+  @media (max-width: 900px) {
+    .dashboard-grid { grid-template-columns: 1fr; gap: 12px; }
+    .modal-box { width: 98%; height: 96%; }
+  }
+
+  .download-btn { min-width:90px; }
+  .dropdown-file { appearance: none; -webkit-appearance: none; background: white url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='none' stroke='gray' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 36px; }
+  /* =============== FULL RESPONSIVE PATCH =============== */
+
+  /* 1️⃣ GRID BREAKPOINTS */
+  @media (max-width: 1200px) {
+    .dashboard-grid {
+      grid-template-columns: 30% 45% 25%;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    aside, section {
+      width: 100%;
+    }
+
+    #bigViewer {
+      height: 60vh !important;
+    }
+
+    .thumb-scroll {
+      gap: 10px;
+    }
+  }
+
+  /* 2️⃣ CHAT RESPONSIVE */
+  @media (max-width: 900px) {
+
+    /* Chat moves below preview */
+    aside:last-child {
+      order: 3 !important;
+    }
+
+    #chatBox {
+      max-height: 320px;
+    }
+
+    #chatForm input {
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+
+    #chatForm button {
+      padding: 8px 16px;
+    }
+
+    .bg-royal-blue-600 {
+      font-size: 14px;
+    }
+  }
+
+  /* 3️⃣ FILE LIST RESPONSIVE */
+  @media (max-width: 850px) {
+    .file-list-scroll {
+      max-height: 280px;
+    }
+
+    .file-info {
+      max-height: 220px;
+    }
+
+    #fileDropdown,
+    #fileSearch {
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    ul#fileList li {
+      padding: 8px;
+    }
+  }
+
+  /* 4️⃣ PREVIEW RESPONSIVE */
+  @media (max-width: 768px) {
+    #bigViewer {
+      height: 55vh !important;
+    }
+
+    #bigPdfFrame {
+      height: 100%;
+    }
+
+    .thumb-item {
+      min-width: 120px;
+      height: 150px;
+    }
+
+    .pdf-frame {
+      padding-left: 0;
+    }
+  }
+
+  /* 5️⃣ FULLSCREEN MODAL RESPONSIVE */
+  @media (max-width: 768px) {
+    .modal-box {
+      width: 98%;
+      height: 94%;
+    }
+
+    #modalBody {
+      height: calc(100% - 60px);
+    }
+
+    #modalTitle {
+      font-size: 15px;
+    }
+
+    #modalDownloadPdf,
+    #modalDownloadJpg,
+    #modalDownloadDocx,
+    #modalDownloadXlsx {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    #modalShare,
+    #modalSaveFolder {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+  }
+
+  /* 6️⃣ SUPER SMALL PHONES (iPhone SE, Galaxy Mini etc.) */
+  @media (max-width: 430px) {
+    .thumb-item {
+      min-width: 100px;
+      height: 130px;
+    }
+
+    #chatForm button i {
+      font-size: 14px;
+    }
+
+    #chatInput {
+      padding: 6px 8px;
+    }
+
+    #chatForm button {
+      padding: 6px 14px;
+    }
+
+    #bigViewer {
+      height: 50vh !important;
+    }
+  }
+
+  /* 7️⃣ BUTTONS RESPONSIVE */
+  @media (max-width: 480px) {
+    #analyseBtn,
+    #openFullBtn {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    #analyseBtn {
+      margin-right: 5px;
+    }
+
+    .download-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+  }
+
+  /* 8️⃣ CHAT BUBBLES ON SMALL SCREENS */
+  @media (max-width: 460px) {
+    .space-y-4 > div div {
+      max-width: 85%;
+      font-size: 13px;
+    }
+  }
+
+  /* 9️⃣ MAKE EVERYTHING SCROLL‐SAFE */
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  /* 10️⃣ FIX MOBILE SAFARI HEIGHT ISSUES */
+  @supports (-webkit-touch-callout: none) {
+    .dashboard-grid {
+      min-height: calc(100vh - 80px);
+    }
+  }
+    
+  /* Force modal to always size relative to viewport */
+  .modal-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  }
+
+  /* The modal box that contains PDF / Image */
+  .modal-box {
+      width: 90vw !important;
+      height: 90vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border-radius: 12px;
+  }
+
+  /* Ensure the viewer takes full space */
+  .modal-body, 
+  #modalBody, 
+  #fullScreenViewer,
+  .fullscreen-view {
+      width: 100% !important;
+      height: calc(100% - 40px) !important;
+      margin: 0;
+      padding: 0;
+      overflow: hidden !important;
+  }
+
+  /* If you're using iframe for PDF */
+  .modal-box iframe,
+  .modal-box object,
+  .modal-box embed {
+      width: 100% !important;
+      height: 100% !important;
+      border: none !important;
+  }
+
+  /* If you're showing an image */
+  .modal-box img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+  }
+
+  /* ========================= MOBILE FIXES ========================= */
+
+  @media (max-width: 768px) {
+      .modal-box {
+          width: 98vw !important;
+          height: 95vh !important;
+          border-radius: 8px;
+      }
+
+      /* Make header smaller */
+      .modal-header {
+          padding: 8px 12px !important;
+          font-size: 14px !important;
+      }
+
+      /* Shrink buttons */
+      .modal-header button {
+          padding: 4px 8px !important;
+          font-size: 12px !important;
+      }
+  }
+
+  @media (max-width: 480px) {
+      .modal-box {
+          width: 99vw !important;
+          height: 96vh !important;
+      }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="relative">
+  <!-- Loading overlay for Analyse action -->
+  <div id="analyseLoading" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <div class="text-lg font-semibold">Analyzing — please wait...</div>
+    <div class="text-sm">This is a demo. Replace with real analysis call.</div>
+  </div>
+
+  <div class="grid dashboard-grid gap-6">
+    <!-- LEFT: file list + dropdown + file info -->
+    <aside class="bg-white rounded-lg p-4 shadow-sm flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-montserrat font-semibold">Files</h3>
+        <button id="filesToggle" class="px-3 py-1 border rounded text-sm">All</button>
+      </div>
+
+      <!-- Dropdown for file groups/categories -->
+      <div class="mb-3">
+        <select id="fileDropdown" class="w-full p-2 rounded border dropdown-file text-sm">
+          <option value="">All Files</option>
+          <option value="A">Category A</option>
+          <option value="B">Category B</option>
+          <option value="C">Category C</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <input id="fileSearch" type="text" placeholder="Search file id or name..." class="w-full p-2 rounded border" />
+      </div>
+
+      <div class="file-list-scroll mb-4">
+        <ul id="fileList" class="space-y-2 text-sm">
+ 
+          <li class="p-2 rounded file-item cursor-pointer hover:bg-gray-100 flex justify-between items-start"
+              data-pdf="{% static 'pdfs/4-1.pdf' %}" data-id="101101_#John Doe#" data-cat="A" title="Double-click to open full">
+            <div>
+              <div class="font-medium">101101_#John Doe#</div>
+              <div class="text-xs text-gray-500">Residential Valuation</div>
+              <div class="text-xs text-gray-400 mt-2">3 docs</div>
+            </div>
+            <div class="text-xs text-gray-400">A</div>
+          </li>
+
+          <li class="p-2 rounded file-item cursor-pointer hover:bg-gray-100 flex justify-between items-start"
+              data-pdf="{% static 'pdfs/4.pdf' %}" data-id="101102_#Mary Roy#" data-cat="B" title="Double-click to open full">
+            <div>
+              <div class="font-medium">101102_#Mary Roy#</div>
+              <div class="text-xs text-gray-500">Commercial Valuation</div>
+              <div class="text-xs text-gray-400 mt-2">2 docs</div>
+            </div>
+            <div class="text-xs text-gray-400">B</div>
+          </li>
+
+          <li class="p-2 rounded file-item cursor-pointer hover:bg-gray-100 flex justify-between items-start"
+              data-pdf="{% static 'pdfs/L.pdf' %}" data-id="101103_#XYZ Corp#" data-cat="C" title="Double-click to open full">
+            <div>
+              <div class="font-medium">101103_#XYZ Corp#</div>
+              <div class="text-xs text-gray-500">Portfolio Analysis</div>
+              <div class="text-xs text-gray-400 mt-2">5 docs</div>
+            </div>
+            <div class="text-xs text-gray-400">C</div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- File info moved into left panel -->
+      <div class="file-info bg-white border rounded p-3 mt-auto">
+        <h4 class="font-semibold mb-2">File Info</h4>
+        <div id="fileInfoBox" class="text-sm text-gray-600">
+          Select a file to see details.
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Big preview + controls -->
+    <section class="bg-white rounded-lg p-4 shadow-sm relative">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-montserrat font-semibold">Preview</h3>
+        <div>
+          <button id="analyseBtn" class="analyse-btn px-4 py-2 rounded mr-2">Analyse</button>
+          <button id="openFullBtn" class="px-3 py-2 border rounded">Open Full</button>
+        </div>
+      </div>
+
+      <!-- Thumbnails row (small horizontal preview) -->
+      <div id="thumbs" class="thumb-scroll flex gap-4 mb-4 overflow-x-auto">
+        <div class="thumb-item" data-pdf="{% static 'pdfs/4-1.pdf' %}" data-id="101101_#John Doe#">
+          <iframe class="pdf-frame" src="{% static 'pdfs/4-1.pdf' %}#view=FitH" title="thumb1"></iframe>
+        </div>
+        <div class="thumb-item" data-pdf="{% static 'pdfs/4.pdf' %}" data-id="101102_#Mary Roy#">
+          <iframe class="pdf-frame" src="{% static 'pdfs/4.pdf' %}#view=FitH" title="thumb2"></iframe>
+        </div>
+        <div class="thumb-item" data-pdf="{% static 'pdfs/L.pdf' %}" data-id="101103_#XYZ Corp#">
+          <iframe class="pdf-frame" src="{% static 'pdfs/L.pdf' %}#view=FitH" title="thumb3"></iframe>
+        </div>
+      </div>
+
+      <!-- Large viewer -->
+      <div class="rounded border overflow-hidden" style="height:70vh;">
+        <div id="bigPreviewHeader" class="flex items-center justify-between px-4 py-2 bg-white border-b">
+          <div class="font-medium" id="bigPreviewTitle">No file selected</div>
+          <div class="flex items-center gap-3">
+            <a id="downloadPdfBtn" class="px-3 py-1 border rounded text-sm hidden download-btn" href="#" download><i class="fas fa-file-pdf mr-2"></i>PDF</a>
+            <a id="downloadJpgBtn" class="px-3 py-1 border rounded text-sm hidden download-btn" href="#" download><i class="fas fa-image mr-2"></i>JPG</a>
+            <a id="downloadDocxBtn" class="px-3 py-1 border rounded text-sm hidden download-btn" href="#" download><i class="fas fa-file-word mr-2"></i>DOCX</a>
+            <a id="downloadXlsxBtn" class="px-3 py-1 border rounded text-sm hidden download-btn" href="#" download><i class="fas fa-file-excel mr-2"></i>XLSX</a>
+          </div>
+        </div>
+
+        <div id="bigViewer" class="w-full h-full">
+          <div id="noSelection" class="h-full flex items-center justify-center text-gray-400">
+            Select a file to view a large preview here.
+          </div>
+          <iframe id="bigPdfFrame" class="w-full h-full hidden border-0" src="" title="big-preview"></iframe>
+        </div>
+      </div>
+    </section>
+<!-- RIGHT: WhatsApp-Style Chat -->
+<aside class="bg-white rounded-lg p-4 shadow-sm flex flex-col">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="font-montserrat font-semibold">Chat</h3>
+    <div class="text-sm text-gray-500">Agent</div>
+  </div>
+
+  <!-- Chat Area -->
+  <div id="chatBox" class="chat-box bg-gray-50 rounded p-3 mb-3 flex-1 overflow-y-auto space-y-4">
+
+    <!-- Example Messages -->
+    <div class="flex flex-col">
+      <span class="text-xs text-gray-500 mb-1">Agent</span>
+      <div class="bg-white p-3 rounded-xl shadow-sm max-w-[75%]">
+        Hi — we have received the uploaded documents for 101101_#John Doe#
+      </div>
+    </div>
+
+    <div class="flex flex-col items-end">
+      <span class="text-xs text-gray-500 mb-1 text-right">You</span>
+      <div class="bg-royal-blue-600 text-white p-3 rounded-xl shadow-sm max-w-[75%]">
+        Thanks — please analyze and prepare the combined report.
+      </div>
+    </div>
+
+    <div class="flex flex-col">
+      <span class="text-xs text-gray-500 mb-1">Agent</span>
+      <div class="bg-white p-3 rounded-xl shadow-sm max-w-[75%]">
+        Will do. Expected in 2 minutes (demo).
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Typing Box -->
+  <form id="chatForm" class="flex items-center gap-2">
+
+    <!-- File Upload -->
+    <label class="cursor-pointer">
+      <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.doc,.docx" />
+      <i class="fas fa-paperclip text-royal-blue-700 text-xl"></i>
+    </label>
+
+    <!-- Text Input -->
+    <input
+      id="chatInput"
+      type="text"
+      placeholder="Type a message..."
+      class="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-royal-blue-500"
+    />
+
+    <!-- Send Button -->
+    <button type="submit" class="bg-royal-blue-600 text-white px-4 py-2 rounded-full">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+
+  </form>
+
+</aside>
+
+<!-- Fullscreen modal for preview + download/share/save folder -->
+<div id="fullscreenModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="flex items-center justify-between p-3 border-b bg-white">
+      <div class="font-semibold" id="modalTitle">Preview</div>
+
+      <div class="flex items-center gap-3">
+        <!-- Share and Save buttons -->
+        <button id="modalShare" class="px-3 py-2 border rounded text-sm"><i class="fas fa-share-alt mr-2"></i>Share</button>
+        <div class="relative">
+          <button id="modalSaveFolder" class="px-3 py-2 border rounded text-sm"><i class="fas fa-folder mr-2"></i>Save</button>
+          <!-- simple folder path display (demo) -->
+        </div>
+
+        <!-- Download buttons -->
+        <a id="modalDownloadPdf" href="#" download class="px-3 py-2 rounded border text-sm download-btn"><i class="fas fa-file-pdf mr-2"></i>PDF</a>
+        <a id="modalDownloadJpg" href="#" download class="px-3 py-2 rounded border text-sm download-btn"><i class="fas fa-image mr-2"></i>JPG</a>
+        <a id="modalDownloadDocx" href="#" download class="px-3 py-2 rounded border text-sm download-btn"><i class="fas fa-file-word mr-2"></i>DOCX</a>
+        <a id="modalDownloadXlsx" href="#" download class="px-3 py-2 rounded border text-sm download-btn"><i class="fas fa-file-excel mr-2"></i>XLSX</a>
+
+        <button id="modalClose" class="px-3 py-2 border rounded text-sm">Close</button>
+      </div>
+    </div>
+
+    <div id="modalBody" class="modal-inner">
+      <iframe id="modalFrame" class="w-full h-full border-0" src=""></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function(){
+    // Elements
+    const fileItems = document.querySelectorAll('.file-item');
+    const thumbs = document.getElementById('thumbs');
+    const bigPdfFrame = document.getElementById('bigPdfFrame');
+    const bigPreviewTitle = document.getElementById('bigPreviewTitle');
+    const openModalBtn = document.getElementById('openFullBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+    const downloadDocxBtn = document.getElementById('downloadDocxBtn');
+    const downloadXlsxBtn = document.getElementById('downloadXlsxBtn');
+    const noSelection = document.getElementById('noSelection');
+    const modal = document.getElementById('fullscreenModal');
+    const modalFrame = document.getElementById('modalFrame');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalClose = document.getElementById('modalClose');
+    const modalDownloadPdf = document.getElementById('modalDownloadPdf');
+    const modalDownloadJpg = document.getElementById('modalDownloadJpg');
+    const modalDownloadDocx = document.getElementById('modalDownloadDocx');
+    const modalDownloadXlsx = document.getElementById('modalDownloadXlsx');
+    const modalShare = document.getElementById('modalShare');
+    const modalSaveFolder = document.getElementById('modalSaveFolder');
+    const analyseBtn = document.getElementById('analyseBtn');
+    const analyseLoading = document.getElementById('analyseLoading');
+    const fileInfoBox = document.getElementById('fileInfoBox');
+    const fileDropdown = document.getElementById('fileDropdown');
+    const fileSearch = document.getElementById('fileSearch');
+
+    let currentFile = null;
+
+    // helper: load big preview
+    function loadBigPreview(url, idText){
+      bigPdfFrame.src = url;
+      bigPdfFrame.classList.remove('hidden');
+      noSelection.style.display = 'none';
+      bigPreviewTitle.textContent = idText || 'Preview';
+      // enable download links (demo links)
+      downloadPdfBtn.href = url;
+      downloadJpgBtn.href = url.replace('.pdf', '.jpg');
+      downloadDocxBtn.href = url.replace('.pdf', '.docx');
+      downloadXlsxBtn.href = url.replace('.pdf', '.xlsx');
+      downloadPdfBtn.classList.remove('hidden');
+      downloadJpgBtn.classList.remove('hidden');
+      downloadDocxBtn.classList.remove('hidden');
+      downloadXlsxBtn.classList.remove('hidden');
+
+      // modal targets
+      modalFrame.src = url;
+      modalDownloadPdf.href = url;
+      modalDownloadJpg.href = url.replace('.pdf', '.jpg');
+      modalDownloadDocx.href = url.replace('.pdf', '.docx');
+      modalDownloadXlsx.href = url.replace('.pdf', '.xlsx');
+    }
+
+    // Fill file info
+    function setFileInfo(id) {
+      fileInfoBox.innerHTML = `
+        <div><strong>ID:</strong> ${id}</div>
+        <div class="mt-2"><strong>Files:</strong> 3</div>
+        <div class="mt-2"><strong>Type:</strong> Demo</div>
+        <div class="mt-2"><strong>Uploaded:</strong> 2025-12-06 (demo)</div>
+      `;
+    }
+
+    // Single-click on left file list -> show big preview
+    fileItems.forEach(item => {
+      item.addEventListener('click', function(e){
+        const pdf = this.getAttribute('data-pdf');
+        const id = this.getAttribute('data-id');
+        currentFile = { pdf, id };
+        loadBigPreview(pdf, id);
+        setFileInfo(id);
+      });
+
+      // Double-click -> open fullscreen modal
+      item.addEventListener('dblclick', function(e){
+        const pdf = this.getAttribute('data-pdf');
+        const id = this.getAttribute('data-id');
+        currentFile = { pdf, id };
+        loadBigPreview(pdf, id);
+        openFullscreen();
+      });
+    });
+
+    // Click thumbnail -> set big preview
+    if (thumbs) {
+      thumbs.querySelectorAll('.thumb-item').forEach(t => {
+        t.addEventListener('click', function(){
+          const url = this.getAttribute('data-pdf');
+          const id = this.getAttribute('data-id');
+          currentFile = { pdf: url, id };
+          loadBigPreview(url, id);
+          setFileInfo(id);
+        });
+
+        t.addEventListener('dblclick', function(){
+          const url = this.getAttribute('data-pdf');
+          const id = this.getAttribute('data-id');
+          currentFile = { pdf: url, id };
+          loadBigPreview(url, id);
+          openFullscreen();
+        });
+      });
+    }
+
+    // Open fullscreen modal
+    function openFullscreen(){
+      if (!currentFile) { alert('Select a file first.'); return; }
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      modalTitle.textContent = currentFile.id || 'Preview';
+    }
+
+    openModalBtn.addEventListener('click', openFullscreen);
+
+    // Close modal
+    modalClose.addEventListener('click', function(){
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      modalFrame.src = '';
+      document.body.style.overflow = '';
+    });
+
+    // click outside modal to close
+    modal.addEventListener('click', function(e){
+      if (e.target === modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        modalFrame.src = '';
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Analyse button -> show loading overlay then open modal with analysis file
+    analyseBtn.addEventListener('click', function(){
+      // Show loading overlay
+      analyseLoading.classList.remove('hidden');
+
+      // Simulate analysis call (replace with fetch POST to your analyse endpoint)
+      setTimeout(function(){
+        analyseLoading.classList.add('hidden');
+        // demo analysis PDF - replace with server returned URL
+        const analysisPdf = "{% static 'pdfs/4.pdf' %}";
+        currentFile = { pdf: analysisPdf, id: 'Analysis_Report_Combined' };
+        loadBigPreview(analysisPdf, currentFile.id);
+        openFullscreen();
+      }, 1800); // demo 1.8s
+    });
+
+    // File search filter
+    fileSearch.addEventListener('input', function(){
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#fileList li').forEach(li => {
+        const id = (li.getAttribute('data-id') || '').toLowerCase();
+        const cat = (li.getAttribute('data-cat') || '').toLowerCase();
+        const dropdownVal = (fileDropdown.value || '').toLowerCase();
+        const matchesSearch = id.includes(q);
+        const matchesDropdown = !dropdownVal || cat === dropdownVal;
+        li.style.display = (matchesSearch && matchesDropdown) ? '' : 'none';
+      });
+    });
+
+    // Dropdown filter
+    fileDropdown.addEventListener('change', function(){
+      const v = this.value.toLowerCase();
+      const q = fileSearch.value.toLowerCase();
+      document.querySelectorAll('#fileList li').forEach(li => {
+        const id = (li.getAttribute('data-id') || '').toLowerCase();
+        const cat = (li.getAttribute('data-cat') || '').toLowerCase();
+        const matchesSearch = id.includes(q);
+        const matchesDropdown = !v || cat === v;
+        li.style.display = (matchesSearch && matchesDropdown) ? '' : 'none';
+      });
+    });
+
+    // Share button - uses Web Share API if available
+    modalShare.addEventListener('click', async function(){
+      if (!currentFile) return alert('Select a file first.');
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: currentFile.id,
+            text: 'Preview: ' + currentFile.id,
+            url: currentFile.pdf
+          });
+        } else {
+          // fallback: open WA share or copy link
+          const wa = 'https://wa.me/?text=' + encodeURIComponent('Preview: ' + currentFile.id + ' - ' + currentFile.pdf);
+          window.open(wa, '_blank');
+        }
+      } catch (err) {
+        alert('Sharing failed or was cancelled.');
+      }
+    });
+
+    // Save to folder (placeholder): opens a small prompt (replace with server API)
+    modalSaveFolder.addEventListener('click', function(){
+      if (!currentFile) return alert('Select a file first.');
+      const folder = prompt('Save to folder (enter path) — demo', '/Vadrida/Reports/');
+      if (folder) {
+        // Implement backend save: POST /api/save with file and folder
+        alert('Saved (demo) to ' + folder);
+      }
+    });
+
+    // Make sure download links in modal point to current file
+    // (modalDownload* variables already bound above during loadBigPreview)
+
+    // keyboard ESC to close modal
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        modal.classList.remove('active');
+        modalFrame.src = '';
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Quick noop safety: if download buttons referenced in JS are missing (older template), try to get them
+    try {
+      window.downloadPdfBtn = downloadPdfBtn;
+    } catch(e) { /* ignore */ }
+
+  })();
+  // Scroll chat to bottom
+function scrollChat() {
+    const chatBox = document.getElementById("chatBox");
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send Message
+document.getElementById("chatForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const input = document.getElementById("chatInput");
+    let message = input.value.trim();
+    if (!message) return;
+
+    const chatBox = document.getElementById("chatBox");
+
+    // Add user bubble
+    chatBox.insertAdjacentHTML("beforeend", `
+        <div class="flex flex-col items-end">
+          <span class="text-xs text-gray-500 mb-1 text-right">You</span>
+          <div class="bg-royal-blue-600 text-white p-3 rounded-xl shadow-sm max-w-[75%]">
+            ${message}
+          </div>
+        </div>
+    `);
+
+    input.value = "";
+    scrollChat();
+
+    // OPTIONAL: send message to backend via API
+});
+
+// Upload File / Image
+document.getElementById("fileInput").addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const chatBox = document.getElementById("chatBox");
+    const fileName = file.name;
+
+    let filePreview = "";
+
+    if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        filePreview = `<img src="${url}" class="w-40 rounded-lg shadow">`;
+    } else {
+        filePreview = `<div class="p-2 bg-gray-200 rounded-lg"><i class="fas fa-file"></i> ${fileName}</div>`;
+    }
+
+    chatBox.insertAdjacentHTML("beforeend", `
+        <div class="flex flex-col items-end">
+          <span class="text-xs text-gray-500 mb-1 text-right">You</span>
+          <div class="bg-royal-blue-600 text-white p-3 rounded-xl shadow-sm max-w-[75%]">
+            ${filePreview}
+          </div>
+        </div>
+    `);
+
+    scrollChat();
+
+    // OPTIONAL: upload file to backend
+});
+scrollChat();
+</script>
+{% endblock %}
