@@ -57,7 +57,34 @@ MIDDLEWARE+= [
     'coreapi.middleware.LoginRequiredMiddleware'
 ]
 ROOT_URLCONF = 'vadrida.urls'
+
 BASE_DIR=Path(__file__).resolve().parent.parent
+
+DOCUMENTS_FOLDER = r"G:\My Drive\1005.FOR_IT\pdfs"
+
+if not os.path.exists(DOCUMENTS_FOLDER):
+    print(f"⚠️  WARNING: Documents folder not found: {DOCUMENTS_FOLDER}")
+    print("Make sure:")
+    print("1. Google Drive is running and synced")
+    print("2. The path is correct")
+    print("3. You have read permissions")
+
+else:
+    print(f"✓ Documents folder found: {DOCUMENTS_FOLDER}")
+    print("Files inside DOCUMENTS_FOLDER:")
+    print(os.listdir(DOCUMENTS_FOLDER))
+
+
+
+ALLOWED_FILE_EXTENSIONS = [
+    '.pdf', '.doc', '.docx', 
+    '.xls', '.xlsx', '.csv',
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp',
+    '.txt', '.zip'
+]
+
+# Maximum file size (in bytes) - 50MB default
+MAX_FILE_SIZE = 50 * 1024 * 1024
 
 TEMPLATES = [
     {
