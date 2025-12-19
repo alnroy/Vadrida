@@ -6,7 +6,7 @@ FILE_INDEX = None
 def build_index():
     global FILE_INDEX
 
-    base_dir = r"C:\Users\asus\Desktop\2025-2026_Invoices"
+    base_dir = settings.DOCUMENTS_ROOT
     folders = []
     files = []
 

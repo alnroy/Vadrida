@@ -1,11 +1,9 @@
 /* ========================= BASE STYLES ========================= */
 html, body {
-    max-height: 100vh;
-    max-width: 100vw;
+    width: 100%;
+    min-height: 100%;
     overflow-x: hidden;
-    overscroll-behavior: none;
     margin: 0;
-    padding: 0;
 }
 
 * {
@@ -15,49 +13,32 @@ html, body {
 section {
     display: flex;
     flex-direction: column;
-    min-height: 400px;
+    min-height: 0;
 }
 
 /* ========================= PREVIEW CONTAINER - CRITICAL FIX ========================= */
 #bigViewer {
-    position: relative;
-    height: calc(90vh - 42px);
-    width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    position: relative;
     background: #f8fafc;
     overflow: hidden;
-    flex-direction: column;
 }
 
 /* ========================= PDF.js CANVAS SUPPORT ========================= */
-.pdf-scroll {
-    position: absolute;
-    inset: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    background: #f8fafc;
-}
-
-.pdf-scroll canvas {
-    display: block;
-    margin: 0 auto 16px;
-    max-width: 100%;
-    height: auto;
-}
-
-
 #bigImageFrame {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    display: block !important;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
 }
 
 #bigImageFrame.hidden {
@@ -73,22 +54,22 @@ section {
     color: #94a3b8;
 }
 
-
 .thumb-item {
-  height: 160px;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    height: 140px;
+    width: 140px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .thumb-item canvas {
-  max-width: 100%;
-  height: auto;
+    max-width: 100%;
+    height: auto;
 }
-
 
 .thumb-item:hover {
     transform: translateY(-2px);
@@ -122,7 +103,9 @@ section {
     animation: spin 1s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
 
 .dropdown-file {
     appearance: none;
@@ -136,19 +119,34 @@ section {
     transition: background 0.2s;
 }
 
-/* ========================= DASHBOARD GRID - FLEXIBLE ========================= */
+/* ========================= DASHBOARD GRID - BASE ========================= */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 24% 52% 24%;
-    height: calc(100vh - 64px);
+    grid-template-columns: 1fr;
     gap: 12px;
     width: 100%;
+    max-width: 100vw;
+}
+
+.dashboard-grid > aside,
+.dashboard-grid > section {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     max-width: 100%;
 }
 
-.dashboard-grid > * {
-    min-width: 0; /* Prevent grid blowout */
+.preview-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1 1 auto;
     min-height: 0;
+}
+
+#bigPreviewHeader {
+    flex-shrink: 0;
 }
 
 /* ========================= FULLSCREEN MODAL ========================= */
@@ -275,10 +273,15 @@ section {
 #thumbs {
     display: flex;
     gap: 12px;
-    overflow-y: auto !important;
-    padding: 8px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    flex-shrink: 0;
+    max-height: 180px;
+}
+
+#thumbs > .thumb-item {
+    flex: 0 0 auto;
 }
 
 #thumbs::-webkit-scrollbar {
@@ -298,166 +301,289 @@ section {
 #thumbs::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* ========================= PDF WRAPPER ========================= */
+#pdfWrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+#pdfMain {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    padding: 16px;
+    background: #f8fafc;
+}
+
+#pdfMain canvas {
+    display: block;
+    margin: 0 auto 16px;
+    max-width: 100%;
+    height: auto;
+}
+
+.pdf-scroll {
+    overscroll-behavior: contain;
+    touch-action: pan-y pinch-zoom;
+}
+
 /* =========================
-   RESPONSIVE SYSTEM (CLEAN)
+   RESPONSIVE BREAKPOINTS
 ========================= */
 
-/* ---------- BASE: MOBILE FIRST (0–767px) ---------- */
-.dashboard-grid {
-  grid-template-columns: 1fr;
-  gap: 12px;
+/* ================= MOBILE (<768px) ================= */
+@media (max-width: 767px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .dashboard-grid > aside:first-of-type {
+        position: relative;
+        z-index: 1;
+        height: auto;
+    }
+
+    .dashboard-grid > section {
+        position: relative;
+        z-index: 2;
+        min-height: 500px;
+        height: auto;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .dashboard-grid > aside:last-of-type {
+        position: relative;
+        z-index: 3;
+        height: auto;
+    }
+
+    #thumbs {
+        max-height: 150px;
+    }
+
+    .thumb-item {
+        width: 110px;
+        height: 110px;
+    }
+
+    button#openFullBtn {
+        display: none;
+    }
+
+    .preview-shell {
+        min-height: 400px;
+        height: 400px;
+    }
+
+    #bigViewer {
+        min-height: 350px;
+        height: 350px;
+    }
+
+    #pdfMain {
+        height: 100%;
+    }
 }
 
-section {
-  padding: 12px;
-  min-height: auto;
+/* ================= TABLET (768–1023px) ================= */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        height: auto;
+        min-height: calc(100vh - 64px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Left sidebar */
+    .dashboard-grid > aside:first-of-type {
+        max-height: 30vh;
+        overflow-y: auto;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        height: auto;
+    }
+
+    /* Center preview section */
+    .dashboard-grid > section {
+        padding: 12px;
+        min-height: 500px;
+        height: auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 2;
+        max-width: 100%;
+    }
+
+    /* Preview shell */
+    .preview-shell {
+        flex: 1 1 auto;
+        min-height: 400px;
+        height: 450px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Big viewer container */
+    #bigViewer {
+        flex: 1 1 auto;
+        min-height: 350px;
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* PDF wrapper */
+    #pdfWrapper {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        overflow: hidden;
+    }
+
+    /* PDF scroll container */
+    #pdfMain {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: 100%;
+    }
+
+    /* Image frame */
+    #bigImageFrame {
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    /* Thumbnails strip */
+    #thumbs {
+        flex-shrink: 0;
+        max-height: 130px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-bottom: 12px;
+    }
+
+    .thumb-item {
+        width: 110px;
+        height: 110px;
+    }
+
+    /* Right chat sidebar */
+    .dashboard-grid > aside:last-of-type {
+        max-height: 300px;
+        min-height: 250px;
+        flex: 0 0 auto;
+        overflow: hidden;
+        position: relative;
+        z-index: 3;
+        height: auto;
+    }
+
+    #chatBox {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+
+    button#openFullBtn {
+        display: inline-block;
+    }
+
+    #bigPreviewHeader {
+        flex-shrink: 0;
+        padding: 8px 12px;
+    }
 }
 
-#bigViewer {
-  height: 70vh;
-  min-height: 320px;
-}
-
-#thumbs {
-  height: 260px;
-  gap: 10px;
-}
-
-.thumb-item {
-  width: 100%;
-  height: 240px;
-}
-
-button#openFullBtn {
-  display: none;
-}
-
-.modal-box {
-  width: 100vw;
-  height: 100vh;
-  border-radius: 0;
-}
-
-/* ---------- TABLET (768–1023px) ---------- */
-@media (min-width: 768px) {
-  #bigViewer {
-    height: 65vh;
-    min-height: 420px;
-  }
-
-  #thumbs {
-    height: 180px;
-  }
-
-  .thumb-item {
-    min-width: 140px;
-    height: 160px;
-  }
-
-  button#openFullBtn {
-    display: inline-block;
-  }
-}
-
-/* ---------- LAPTOP (1024–1279px) ---------- */
+/* ================= DESKTOP (≥1024px) ================= */
 @media (min-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: 26% 48% 26%;
-    gap: 14px;
-  }
+    .dashboard-grid {
+        grid-template-columns: 280px 1fr 320px;
+        height: calc(100vh - 64px);
+        overflow: hidden;
+    }
 
-  section {
-    padding: 14px;
-  }
+    .dashboard-grid > aside,
+    .dashboard-grid > section {
+        height: 100%;
+        overflow: hidden;
+    }
 
-  #bigViewer {
-    height: 75vh;
-    min-height: 520px;
-  }
+    section {
+        padding: 14px;
+        min-height: 0;
+    }
 
-  #thumbs {
-    height: 160px;
-  }
+    .preview-shell {
+        height: 100%;
+    }
 
-  .thumb-item {
-    width: 160px;
-    height: 180px;
-  }
+    #bigViewer {
+        height: 100%;
+    }
+
+    #thumbs {
+        max-height: 160px;
+    }
+
+    .thumb-item {
+        width: 140px;
+        height: 140px;
+    }
+
+    button#openFullBtn {
+        display: inline-block;
+    }
 }
 
-/* ---------- DESKTOP (1280–1535px) ---------- */
+/* ================= LARGE DESKTOP (1280–1535px) ================= */
 @media (min-width: 1280px) {
-  .dashboard-grid {
-    grid-template-columns: 24% 52% 24%;
-  }
+    .dashboard-grid {
+        grid-template-columns: 24% 52% 24%;
+    }
 
-  #bigViewer {
-    height: 78vh;
-  }
-
-  .thumb-item {
-    width: 180px;
-    height: 200px;
-  }
+    .thumb-item {
+        width: 160px;
+        height: 180px;
+    }
 }
 
-/* ---------- LARGE SCREENS (1536px+) ---------- */
+/* ================= EXTRA LARGE SCREENS (1536px+) ================= */
 @media (min-width: 1536px) {
-  #bigViewer {
-    height: 82vh;
-  }
-
-  .thumb-item {
-    width: 220px;
-    height: 240px;
-  }
+    .thumb-item {
+        width: 200px;
+        height: 220px;
+    }
 }
 
-/* ---------- PRINT ---------- */
+/* ================= PRINT ================= */
 @media print {
-  .dashboard-grid {
-    display: block;
-  }
+    .dashboard-grid {
+        display: block;
+    }
 
-  aside,
-  #chatBox,
-  button {
-    display: none;
-  }
-
-  #bigViewer {
-    height: auto;
-  }
+    aside,
+    #chatBox,
+    button {
+        display: none;
+    }
 }
-.pdf-scroll {
-  overscroll-behavior: contain;
-  touch-action: pan-y pinch-zoom;
-}
-
-#pdfWrapper {
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.dashboard-grid {
-  height: calc(100vh - 64px); /* adjust if navbar height differs */
-}
-
-/* PDF main scroll container */
-#pdfMain {
-  overflow-y: auto;
-  min-height: 0;
-}
-
-/* PDF pages */
-#pdfMain canvas {
-  display: block;
-  margin: 0 auto 24px;
-}
-
-/* Thumbnails */
-#thumbs {
-  overflow-y: auto;
-}
-

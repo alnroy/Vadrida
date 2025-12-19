@@ -1,0 +1,1631 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Site Feedback Form — Vadrida{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/feedback.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Navigation Bar -->
+<nav class="feedback-nav">
+  <div class="nav-content">
+    <div class="nav-left">
+      <a href="{% url 'coreapi:dashboard' %}" class="nav-link back-link">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+    <div class="nav-center">
+      <h1 class="page-title">Site Feedback Form</h1>
+    </div>
+    <div class="nav-right">
+      <span class="user-info">{{ user.username }}</span>
+    </div>
+  </div>
+</nav>
+
+<div id="orientationBlocker" class="orientation-blocker hidden">
+  <div class="orientation-box">
+    <h2>Rotate Device</h2>
+    <p>This page works only in <b>landscape mode</b> on tablets.</p>
+  </div>
+</div>
+
+<div class="relative">
+  <!-- Loading overlay for Analyse action -->
+  <div id="analyseLoading" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <div class="text-lg font-semibold">Analyzing — please wait...</div>
+    <div class="text-sm">Processing your file...</div>
+  </div>
+
+  <div class="feedback-layout">
+    <!-- LEFT COLUMN: File List + Preview -->
+    <div class="left-column">
+      <!-- FILE LIST SECTION -->
+      <section class="file-section">
+        <div class="section-header">
+          <h3 class="section-title">Files</h3>
+          <button id="refreshFolders" class="refresh-btn">🔄</button>
+        </div>
+
+        <div class="file-controls">
+          <input id="fileSearch" type="text" placeholder="Search file id or name..." class="search-input" />
+          <div class="path-nav">
+            <button id="goBackBtn" class="nav-btn">⬅</button>
+            <span id="currentPath">/</span>
+          </div>
+        </div>
+
+        <div class="file-list-container">
+          <ul id="fileList" class="file-list"></ul>
+        </div>
+
+        <div class="file-info-panel">
+          <h4 class="info-title">File Info</h4>
+          <div id="fileInfoBox" class="info-content">
+            Select a file to see details.
+          </div>
+        </div>
+      </section>
+
+      <!-- PREVIEW SECTION -->
+      <section class="preview-section">
+        <div class="section-header">
+          <h3 class="section-title">Preview</h3>
+          <div class="preview-controls">
+            <button id="analyseBtn" class="analyse-btn">Analyse</button>
+            <button id="openFullBtn" class="control-btn">Open Full</button>
+          </div>
+        </div>
+
+        <div id="thumbs" class="thumbs-strip"></div>
+
+        <div class="preview-container">
+          <div class="preview-header">
+            <div id="bigPreviewTitle" class="preview-title">No file selected</div>
+            <button hidden id="downloadPdfBtn" class="download-btn hidden">
+            
+            </button>
+          </div>
+
+          <div id="bigViewer" class="preview-viewer">
+            <div id="noSelection" class="no-selection">
+              Select a file to preview
+            </div>
+            <div id="pdfWrapper" class="hidden pdf-container">
+              <div id="pdfMain" class="pdf-scroll-container"></div>
+            </div>
+            <img id="bigImageFrame" class="hidden preview-image" src="" alt="preview" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: Comprehensive Feedback Form -->
+    <div class="right-column">
+      <div class="form-section">
+        <div class="form-header">
+          <h3 class="section-title">Site Feedback Form</h3>
+        </div>
+
+        <form id="siteFeedbackForm" class="feedback-form">
+          
+          <!-- Valuers Checklist -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">Valuers Checklist</h4>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">1. Office File No.</label>
+                <input type="number" name="office_file_no" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">2. Applicant Name</label>
+                <input type="text" name="applicant_name" class="form-input">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">3. Inspection Date</label>
+                <input type="date" name="inspection_date" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">4. Name of the person met at site</label>
+                <input type="text" name="person_met" class="form-input">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">5. Product</label>
+              <select name="product" class="form-select">
+                <option value="">Select Product</option>
+                <option value="1st purchase">1st Purchase</option>
+                <option value="construction">Construction</option>
+                <option value="topup">Top Up</option>
+                <option value="pd">PD</option>
+                <option value="resale">Resale</option>
+                <option value="renovation">Renovation</option>
+                <option value="takeover">Takeover</option>
+                <option value="lap">LAP</option>
+                <option value="extension">Extension</option>
+                <option value="npa">NPA</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">6. Documents Received</label>
+              <div class="checkbox-grid">
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Agreement"> Agreement</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Encumbrance"> Encumbrance</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Building Permit"> Building Permit</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Declaration"> Declaration</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Location Sketch"> Location Sketch</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Development Permit"> Development Permit</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Title Deed"> Title Deed</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Survey Sketch"> Survey Sketch</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Building Certificate"> Building Certificate</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="LTR"> LTR</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Building Tax receipt"> Building Tax Receipt</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Approved plan"> Approved Plan</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Possession"> Possession</label>
+                <label class="checkbox-label"><input type="checkbox" name="documents" value="Engineers plan"> Engineers Plan</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- I. Ownership Analysis -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">I. Ownership Analysis</h4>
+            
+            <div class="form-group">
+              <label class="form-label">1. Owner(s) Name</label>
+              <input type="text" name="owners_name" class="form-input">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Document Verification</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" name="ownership_check" value="same in all documents"> Same in all documents</label>
+                <label class="checkbox-label"><input type="checkbox" name="ownership_check" value="discrepancy noted"> Discrepancy noted</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea name="ownership_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- II. Survey Number and Land Extend Analysis -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">II. Survey Number and Land Extend Analysis</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table survey-table">
+                <thead>
+                  <tr>
+                    <th><input type="text" class="table-input">Doc Name</th>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Re-Sy Block No</td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Re-Sy No</td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Re-Sy Subdiv No</td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Sy Block No</td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Sy No</td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Sy Subdiv No</td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Land Extent (Ares)</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>Land Classification</td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes, % of wetland and dry lands, surrounding development if wet land..?</label>
+              <textarea name="survey_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- III. Boundary Analysis and Property Identification -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">III. Boundary Analysis and Property Identification</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>Direction</th>
+                     <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="no demarcation"> Title Deed</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="gi sheet fence"> Location</label>
+                     </td>
+                      <th>Translation Reason if any</th>
+                    <th>Site</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>North</td>
+                    <td><input type="text" class="table-input"></td>
+                  
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>East</td>
+                    <td><input type="text" class="table-input"></td>
+            
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>South</td>
+                    <td><input type="text" class="table-input"></td>
+               
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>West</td>
+                    <td><input type="text" class="table-input"></td>
+                
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes if any/property identified with respect to documents..?</label>
+              <textarea name="boundary_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- IV. Demarcations -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">IV. Demarcations</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>Direction</th>
+                    <th>Demarcation Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>North</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="no demarcation"> No demarcation</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="gi sheet fence"> GI sheet fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="barbed wire"> Barbed wire</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="steel pegs"> Steel pegs</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="compound wall"> Compound wall</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="bio fence"> Bio fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="survey stone"> Survey stone</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_north" value="wooden pegs"> Wooden pegs</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>East</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="no demarcation"> No demarcation</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="gi sheet fence"> GI sheet fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="barbed wire"> Barbed wire</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="steel pegs"> Steel pegs</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="compound wall"> Compound wall</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="bio fence"> Bio fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="survey stone"> Survey stone</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_east" value="wooden pegs"> Wooden pegs</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>South</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="no demarcation"> No demarcation</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="gi sheet fence"> GI sheet fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="barbed wire"> Barbed wire</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="steel pegs"> Steel pegs</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="compound wall"> Compound wall</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="bio fence"> Bio fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="survey stone"> Survey stone</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_south" value="wooden pegs"> Wooden pegs</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>West</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="no demarcation"> No demarcation</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="gi sheet fence"> GI sheet fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="barbed wire"> Barbed wire</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="steel pegs"> Steel pegs</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="compound wall"> Compound wall</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="bio fence"> Bio fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="survey stone"> Survey stone</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="wooden pegs"> Wooden pegs</label>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes if any</label>
+              <textarea name="demarcation_notes" class="form-textarea" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Encroachment of subject building to neighbouring property, if any..?</label>
+              <textarea name="subject_encroachment" class="form-textarea" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Encroachment of neighbour's building to subject property, if any..?</label>
+              <textarea name="neighbor_encroachment" class="form-textarea" rows="3"></textarea>
+            </div>
+          </div>
+
+          <!-- V. Access Nature/Right of Access -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">V. Access Nature/Right of Access</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table access-table">
+                <tbody>
+                  <tr>
+                    <td>1. Type of access as per title deed</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="footway"> Footway</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="panchayat rd"> Panchayat Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="corporation rd"> Corporation Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="national highway"> National Highway</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="private way"> Private Way</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="municipal rd"> Municipal Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="pwd road"> PWD Road</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_deed" value="land locked"> Land Locked</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2. Type of access as per site visit</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="footway"> Footway</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="panchayat rd"> Panchayat Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="corporation rd"> Corporation Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="national highway"> National Highway</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="private way"> Private Way</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="municipal rd"> Municipal Rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="pwd road"> PWD Road</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="access_site" value="land locked"> Land Locked</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>3. If private way, no of users..?</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_users" value="self use"> Self use</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_users" value="self & 1 user"> Self & 1 user</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_users" value="self & 2 user"> Self & 2 user</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_users" value="self + family"> Self + family</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>4. Demarcation of private road</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="no demarcation"> No demarcation</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="gi sheet fence"> GI sheet fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="barbed wire"> Barbed wire</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="steel pegs"> Steel pegs</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="compound wall"> Compound wall</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="bio fence"> Bio fence</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="survey stone"> Survey stone</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="private_demarcation" value="wooden pegs"> Wooden pegs</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>5. Least width of main access in M</td>
+                    <td><input type="number" step="0.01" name="main_access_width" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>6. Vehicular access</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="vehicular_access" value="pedestrian"> Pedestrian</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="vehicular_access" value="2-wheeler"> 2-wheeler</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="vehicular_access" value="3-wheeler"> 3-wheeler</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="vehicular_access" value="4-wheeler"> 4-wheeler</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>7. Least width of internal roads, in case of plot development</td>
+                    <td><input type="number" step="0.01" name="internal_road_width" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>8. Weather the internal rd. abutting the subject plot has connectivity to main access as per deed..?</td>
+                    <td><input type="text" name="internal_connectivity" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>9. Material of road</td>
+                    <td class="checkbox-cell">
+                      <label class="checkbox-label-small"><input type="checkbox" name="road_material" value="mud road"> Mud road</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="road_material" value="gravel road"> Gravel road</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="road_material" value="concrete road"> Concrete road</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="road_material" value="paving tile rd"> Paving tile rd</label>
+                      <label class="checkbox-label-small"><input type="checkbox" name="road_material" value="tar road"> Tar road</label>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes/Discrepancy if any..</label>
+              <textarea name="access_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- VI. For Purchase and Resale cases -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">VI. For Purchase and Resale cases</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table">
+                <tbody>
+                  <tr>
+                    <td>1. Buyer name</td>
+                    <td><input type="text" name="buyer_name" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>2. Seller name</td>
+                    <td><input type="text" name="seller_name" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>3. Relation b/w buyer and seller, if any</td>
+                    <td><input type="text" name="buyer_seller_relation" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>4. Since how long the property is up for sale..?</td>
+                    <td><input type="text" name="property_sale_duration" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>5. Brockers/OLX/99acers etc involved or how transaction happened..?</td>
+                    <td><input type="text" name="transaction_method" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>6. Land extend proposed for purchase..?</td>
+                    <td><input type="text" name="purchase_land_extent" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>7. Price asked</td>
+                    <td><input type="number" name="price_asked" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>8. Deal breaker value</td>
+                    <td><input type="number" name="deal_breaker_value" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes/discrepancy if any..</label>
+              <textarea name="purchase_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- VII. Building Analysis -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">VII. Building Analysis</h4>
+            
+            <div class="table-container">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>Floor No</th>
+                    <th>Builtup Area (measured at site)</th>
+                    <th>No. of Rooms</th>
+                    <th>No. of Kitchen</th>
+                    <th>No. of Bathrooms</th>
+                    <th>Usage (Residential/Commercial/Industrial)</th>
+                    <th>Occupancy (Owner/Applicant/Rented/Vacant)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>BF-2</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>BF-1</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>GF</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>1st Floor</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>2nd Floor</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>3rd Floor</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>4th Floor</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                  <tr>
+                    <td>5th Floor</td>
+                    <td><input type="number" step="0.01" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="number" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes/discrepancy in BUA/occupancy comparing site with respect to approved plan/permit etc if any..</label>
+              <textarea name="building_analysis_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+
+            <!-- Roof Type Table -->
+            <div class="table-container">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>Roof Type</th>
+                    <th> <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="no demarcation"> RCC</label>
+                     </th>
+                    <th> <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="no demarcation">Tiled</label>
+                     </th>
+                    <th> <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="no demarcation"> Sheet</label>
+                     </th>
+                    <th> <label class="checkbox-label-small"><input type="checkbox" name="demarcation_west" value="no demarcation"> Other</label>
+                     </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Roof Percentage</td>
+                    <td><input type="number" step="0.01" class="table-input" placeholder="%"></td>
+                    <td><input type="number" step="0.01" class="table-input" placeholder="%"></td>
+                    <td><input type="number" step="0.01" class="table-input" placeholder="%"></td>
+                    <td><input type="text" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Setback Table -->
+            <div class="table-container">
+                <table class="analysis-table">
+                    <thead>
+                    <tr>
+                        <!-- Single column -->
+                        <th rowspan="2">Setback (m)</th>
+
+                        <!-- Yard headers -->
+                        <th colspan="2">Front Yard</th>
+                        <th colspan="2">Side-1 Yard</th>
+                        <th colspan="2">Side-2 Yard</th>
+                        <th colspan="2">Rear Yard</th>
+                    </tr>
+                    <tr>
+                        <!-- Sub headers -->
+                        <th>Min</th>
+                        <th>Max</th>
+
+                        <th>Min</th>
+                        <th>Max</th>
+
+                        <th>Min</th>
+                        <th>Max</th>
+
+                        <th>Min</th>
+                        <th>Max</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <!-- SINGLE setback input -->
+                        <td>
+                        <input
+                            type="number"
+                            step="0.01"
+                            class="table-input"
+                            placeholder="Setback"
+                        />
+                        </td>
+
+                        <!-- Front yard -->
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+
+                        <!-- Side-1 -->
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+
+                        <!-- Side-2 -->
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+
+                        <!-- Rear -->
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+                        <td><input type="number" step="0.01" class="table-input" /></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Construction Timeline Table -->
+            <div class="table-container">
+              <table class="analysis-table">
+                <tbody>
+                  <tr>
+                    <td>Year of construction of foundation, other floors etc, if constructed in different timelines</td>
+                    <td><input type="text" name="construction_timeline" class="table-input"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes/no of carparks/wardrobes/kitchen cabinets/flooring material/interior decorations, any other amenities..?</label>
+              <textarea name="amenities_notes" class="form-textarea" rows="4"></textarea>
+            </div>
+          </div>
+
+          <!-- VIII. Landmark and Layout (Handsketch) -->
+          <div class="form-section-group">
+            <h4 class="form-section-title">VIII. Landmark and Layout (Handsketch)</h4>
+            
+            <div class="form-group">
+              <label class="form-label">Landmark</label>
+              <textarea name="landmark_description" class="form-textarea" rows="3"></textarea>
+            </div>
+
+            <div class="sketch-container">
+              <div class="sketch-header">
+                <span>Drawing Area</span>
+                <div class="compass">
+                  <div class="compass-circle">
+                    <div class="compass-point north">N</div>
+                    <div class="compass-point east">E</div>
+                    <div class="compass-point south">S</div>
+                    <div class="compass-point west">W</div>
+                  </div>
+                </div>
+              </div>
+              <canvas id="sketchCanvas" class="sketch-canvas" width="600" height="400"></canvas>
+              <div class="sketch-controls">
+                <button type="button" id="clearCanvas" class="sketch-btn">Clear</button>
+                <button type="button" id="undoCanvas" class="sketch-btn">Undo</button>
+                <input type="color" id="colorPicker" value="#000000" class="color-picker">
+                <input type="range" id="brushSize" min="1" max="10" value="2" class="brush-size">
+                <span class="brush-label">Brush Size</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- All modals remain the same -->
+<div id="fullscreenModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div id="modalTitle" class="modal-title">Preview</div>
+      <div class="modal-controls">
+        <div id="shareButtonsContainer" class="share-buttons hidden">
+          <a href="#" id="shareWhatsapp" class="share-btn">
+            <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+          </a>
+          <a href="#" id="shareTelegram" class="share-btn">
+            <i class="fab fa-telegram mr-2"></i>Telegram
+          </a>
+          <a href="#" id="shareEmail" class="share-btn">
+            <i class="fas fa-envelope mr-2"></i>Email
+          </a>
+          <a href="#" id="shareCopy" class="share-btn">
+            <i class="fas fa-link mr-2"></i>Copy Link
+          </a>
+        </div>
+        <a id="modalShare" href="#" class="share-btn">
+          <i class="fas fa-share-alt mr-2"></i>Share
+        </a>
+        <button id="modalDownloadBtn" class="download-btn">
+          <i class="fas fa-file-download mr-2"></i>Download
+        </button>
+        <button id="modalClose" class="control-btn">Close</button>
+      </div>
+    </div>
+    <div id="modalBody" class="modal-body">
+      <iframe id="modalFrame" class="hidden" src=""></iframe>
+      <img id="modalImage" class="hidden" src="" alt="preview" />
+    </div>
+  </div>
+</div>
+
+<div id="analyseModal" class="modal hidden">
+  <div class="modal-content">
+    <h2 class="modal-title">Analyse Files</h2>
+    <p class="modal-text">Choose files for analysis</p>
+    <button id="analyseSelectFiles" class="modal-btn primary">Select Files</button>
+    <button id="analyseSelectAll" class="modal-btn success">Select All Files</button>
+    <button id="analyseClose" class="modal-btn">Cancel</button>
+  </div>
+</div>
+
+<div id="fileSelectModal" class="modal hidden">
+  <div class="modal-content">
+    <h2 class="modal-title">Select Files</h2>
+    <div id="fileSelectList" class="file-select-list"></div>
+    <button id="confirmFileSelection" class="modal-btn primary">Confirm Selection</button>
+    <button id="fileSelectClose" class="modal-btn">Cancel</button>
+  </div>
+</div>
+
+
+
+<script>
+/* =========================
+   CSRF
+========================= */
+function getCookie(name) {
+  let v = null;
+  document.cookie?.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "=")) v = decodeURIComponent(c.slice(name.length + 1));
+  });
+  return v;
+}
+const csrftoken = getCookie("csrftoken");
+
+/* =========================
+   ELEMENTS
+========================= */
+const fileList = document.getElementById("fileList");
+const thumbsContainer = document.getElementById("thumbs");
+const bigImageFrame = document.getElementById("bigImageFrame");
+const noSelection = document.getElementById("noSelection");
+const bigPreviewTitle = document.getElementById("bigPreviewTitle");
+const openModalBtn = document.getElementById("openFullBtn");
+const fileInfoBox = document.getElementById("fileInfoBox");
+const pdfWrapper = document.getElementById("pdfWrapper");
+const pdfMain = document.getElementById("pdfMain");
+
+/* =========================
+   STATE
+========================= */
+let currentFolder = "";
+let currentFile = null;
+let analysisController = null;
+let currentFolderFiles = [];
+let selectedAnalysisFiles = [];
+let rootFoldersCache = null;
+let isSearching = false;
+let currentPreviewUrl = null;
+
+/* =========================
+   FOLDER LOADER
+========================= */
+function loadFolder(path = "") {
+  currentFolder = path;
+  document.getElementById("currentPath").textContent = "/" + (path || "");
+  
+  // Show loading state
+  fileList.innerHTML = `<li class="file-item loading">Loading...</li>`;
+  thumbsContainer.innerHTML = `<div class="no-thumbs">Loading...</div>`;
+
+  console.log("Loading folder:", path); // Debug log
+
+  fetch(`/coreapi/api/folder-contents/?path=${encodeURIComponent(path)}`)
+    .then(response => {
+      console.log("Response status:", response.status); // Debug log
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Received data:", data); // Debug log
+      currentFolderFiles = data.files || [];
+      renderFileList(data.folders || [], data.files || []);
+      renderThumbs(data.files || []);
+    })
+    .catch(error => {
+      console.error("Error loading folder:", error);
+      fileList.innerHTML = `<li class="file-item error">Error loading folder: ${error.message}</li>`;
+      thumbsContainer.innerHTML = `<div class="no-thumbs">Error loading files</div>`;
+    });
+}
+
+document.getElementById("goBackBtn").onclick = () => {
+  if (!currentFolder) return;
+  const parts = currentFolder.split("/");
+  parts.pop();
+  loadFolder(parts.join("/"));
+};
+
+/* =========================
+   FILE LIST
+========================= */
+function renderFileList(folders, files) {
+  console.log("Rendering file list - Folders:", folders.length, "Files:", files.length); // Debug log
+  
+  fileList.innerHTML = "";
+
+  // Render folders first
+  folders.forEach(folder => {
+    const li = document.createElement("li");
+    li.className = "file-item folder-item";
+    li.innerHTML = `📁 <strong>${folder.name}</strong>`;
+    li.onclick = () => {
+      console.log("Clicking folder:", folder.path); // Debug log
+      loadFolder(folder.path);
+    };
+    fileList.appendChild(li);
+  });
+
+  // Render files
+  files.forEach(file => {
+    const li = document.createElement("li");
+    li.className = "file-item";
+    li.innerHTML = `
+      <div class="file-details">
+        <div class="file-name">${file.name}</div>
+        <div class="file-ext">${file.extension || ""}</div>
+      </div>
+    `;
+
+    li.onclick = () => {
+      console.log("Clicking file:", file.name); // Debug log
+      document.querySelectorAll(".file-item").forEach(el => el.classList.remove("selected"));
+      li.classList.add("selected");
+      loadBigPreview(file);
+      setFileInfo(file);
+    };
+
+    fileList.appendChild(li);
+  });
+
+  // Show message if no items
+  if (!folders.length && !files.length) {
+    fileList.innerHTML = `<li class="no-results">No files or folders found</li>`;
+  }
+}
+
+/* =========================
+   THUMBNAILS
+========================= */
+async function renderPdfThumbnail(file, container) {
+  try {
+    await loadPdfJsIfNeeded();
+
+    const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    const page = await pdf.getPage(1);
+
+    const viewport = page.getViewport({ scale: 0.3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: canvas.getContext("2d"),
+      viewport
+    }).promise;
+
+    container.appendChild(canvas);
+  } catch (error) {
+    console.error("Error rendering PDF thumbnail:", error);
+    container.innerHTML = `
+      <div class="file-icon">
+        <i class="fas fa-file-pdf"></i><br>PDF
+      </div>
+    `;
+  }
+}
+
+async function renderThumbs(files) {
+  console.log("Rendering thumbnails for", files.length, "files"); // Debug log
+  
+  thumbsContainer.innerHTML = "";
+
+  if (!files.length) {
+    thumbsContainer.innerHTML = `<div class="no-thumbs">No files to preview</div>`;
+    return;
+  }
+
+  for (const file of files) {
+    const card = document.createElement("div");
+    card.className = "thumb-item";
+
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+      const img = document.createElement("img");
+      img.src = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+      img.loading = "lazy";
+      img.onerror = () => {
+        card.innerHTML = `
+          <div class="file-icon">
+            <i class="fas fa-image"></i><br>${ext.toUpperCase()}
+          </div>
+        `;
+      };
+      card.appendChild(img);
+    }
+    else if (ext === "pdf") {
+      await renderPdfThumbnail(file, card);
+    }
+    else {
+      card.innerHTML = `
+        <div class="file-icon">
+          <i class="fas fa-file"></i><br>${ext.toUpperCase()}
+        </div>
+      `;
+    }
+
+    card.onclick = () => {
+      console.log("Clicking thumbnail for:", file.name); // Debug log
+      loadBigPreview(file);
+    };
+    thumbsContainer.appendChild(card);
+  }
+}
+
+/* =========================
+   PREVIEW
+========================= */
+function loadBigPreview(file) {
+  console.log("Loading preview for:", file.name); // Debug log
+  currentFile = file;
+
+  // Hard reset
+  pdfMain.innerHTML = "";
+  pdfWrapper.classList.add("hidden");
+  bigImageFrame.classList.add("hidden");
+  noSelection.classList.add("hidden");
+  bigImageFrame.src = "";
+
+  const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+  currentPreviewUrl = url;
+  bigPreviewTitle.textContent = file.name;
+
+  const ext = file.name.split(".").pop().toLowerCase();
+
+  // IMAGE
+  if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+    bigImageFrame.src = url;
+    bigImageFrame.onload = () => {
+      bigImageFrame.classList.remove("hidden");
+      document.getElementById("downloadPdfBtn").classList.remove("hidden");
+    };
+    bigImageFrame.onerror = () => {
+      noSelection.textContent = "Error loading image";
+      noSelection.classList.remove("hidden");
+    };
+    return;
+  }
+
+  // PDF
+  if (ext === "pdf") {
+    pdfWrapper.classList.remove("hidden");
+    document.getElementById("downloadPdfBtn").classList.remove("hidden");
+    renderFullPdf(url);
+    return;
+  }
+
+  // OTHER FILES
+  noSelection.textContent = "Preview not available for this file type";
+  noSelection.classList.remove("hidden");
+  document.getElementById("downloadPdfBtn").classList.add("hidden");
+}
+
+/* =========================
+   FILE INFO
+========================= */
+function setFileInfo(file) {
+  fileInfoBox.innerHTML = `
+    <div class="info-row"><strong>Name:</strong> <span>${file.name}</span></div>
+    <div class="info-row"><strong>Type:</strong> ${file.extension || "Unknown"}</div>
+    <div class="info-row"><strong>Size:</strong> ${file.size || "N/A"}</div>
+    <div class="info-row"><strong>Path:</strong> <span>${file.path || "N/A"}</span></div>
+  `;
+}
+
+/* =========================
+   ANALYSE
+========================= */
+function startAnalysis(files) {
+  if (analysisController) {
+    analysisController.abort();
+  }
+
+  analysisController = new AbortController();
+  document.getElementById("analyseLoading").classList.remove("hidden");
+
+  fetch("/coreapi/api/analyze/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken
+    },
+    body: JSON.stringify({ files, folder: currentFolder }),
+    signal: analysisController.signal
+  })
+  .then(r => {
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    }
+    return r.json();
+  })
+  .then(() => {
+    console.log("Analysis completed");
+    loadFolder(currentFolder);
+  })
+  .catch(error => {
+    if (error.name !== 'AbortError') {
+      console.error("Analysis error:", error);
+      alert("Analysis failed: " + error.message);
+    }
+  })
+  .finally(() => {
+    document.getElementById("analyseLoading").classList.add("hidden");
+    analysisController = null;
+  });
+}
+
+const analyseBtn = document.getElementById("analyseBtn");
+const analyseModal = document.getElementById("analyseModal");
+
+analyseBtn.onclick = () => {
+  if (!currentFolder && currentFolderFiles.length === 0) {
+    alert("No files available for analysis");
+    return;
+  }
+  analyseModal.classList.remove("hidden");
+};
+
+document.getElementById("analyseSelectAll").onclick = () => {
+  if (!currentFolderFiles.length) {
+    alert("No files in current location");
+    return;
+  }
+
+  const files = currentFolderFiles.map(f => ({ file_path: f.path }));
+  analyseModal.classList.add("hidden");
+  startAnalysis(files);
+};
+
+const fileSelectModal = document.getElementById("fileSelectModal");
+const fileSelectList = document.getElementById("fileSelectList");
+
+document.getElementById("analyseSelectFiles").onclick = () => {
+  if (!currentFolderFiles.length) {
+    alert("No files in current location");
+    return;
+  }
+
+  fileSelectList.innerHTML = "";
+  selectedAnalysisFiles = [];
+
+  currentFolderFiles.forEach(file => {
+    const row = document.createElement("label");
+    row.className = "flex items-center gap-2 mb-2 cursor-pointer";
+    row.innerHTML = `
+      <input type="checkbox" value="${file.path}" />
+      <span class="truncate">${file.name}</span>
+    `;
+
+    const checkbox = row.querySelector("input");
+    checkbox.onchange = () => {
+      if (checkbox.checked) {
+        selectedAnalysisFiles.push({ file_path: checkbox.value });
+      } else {
+        selectedAnalysisFiles = selectedAnalysisFiles.filter(f => f.file_path !== checkbox.value);
+      }
+    };
+
+    fileSelectList.appendChild(row);
+  });
+
+  analyseModal.classList.add("hidden");
+  fileSelectModal.classList.remove("hidden");
+};
+
+document.getElementById("confirmFileSelection").onclick = () => {
+  if (!selectedAnalysisFiles.length) {
+    alert("Select at least one file");
+    return;
+  }
+
+  fileSelectModal.classList.add("hidden");
+  startAnalysis(selectedAnalysisFiles);
+};
+
+document.getElementById("analyseClose").onclick = () => {
+  analyseModal.classList.add("hidden");
+};
+
+document.getElementById("fileSelectClose").onclick = () => {
+  fileSelectModal.classList.add("hidden");
+};
+
+/* =========================
+   FILE SEARCH
+========================= */
+const searchInput = document.getElementById("fileSearch");
+let searchTimer = null;
+
+searchInput.addEventListener("input", e => {
+  const q = e.target.value.trim();
+  clearTimeout(searchTimer);
+
+  searchTimer = setTimeout(() => {
+    if (!q) {
+      isSearching = false;
+      if (rootFoldersCache) {
+        renderFileList(rootFoldersCache.folders || [], rootFoldersCache.files || []);
+        renderThumbs(rootFoldersCache.files || []);
+      } else {
+        loadFolder(currentFolder);
+      }
+      return;
+    }
+
+    globalSearch(q);
+  }, 300);
+});
+
+/* =========================
+   RENDER FULL PDF - ENHANCED WITH SCROLLING
+========================= */
+async function renderFullPdf(url) {
+  try {
+    await loadPdfJsIfNeeded();
+
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    pdfMain.innerHTML = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const scale = window.innerWidth < 768 ? 1.2 : 1.5;
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.marginBottom = "10px";
+      canvas.style.display = "block";
+      canvas.style.border = "1px solid #e5e7eb";
+
+      await page.render({
+        canvasContext: canvas.getContext("2d"),
+        viewport
+      }).promise;
+
+      pdfMain.appendChild(canvas);
+    }
+    
+    // Ensure PDF container is scrollable
+    pdfMain.style.overflowY = "auto";
+    pdfMain.style.maxHeight = "100%";
+    
+  } catch (error) {
+    console.error("Error rendering PDF:", error);
+    pdfMain.innerHTML = `<div class="error">Error loading PDF: ${error.message}</div>`;
+  }
+}
+
+/* =========================
+   PDF.JS LOADER
+========================= */
+function loadPdfJsIfNeeded() {
+  if (window.pdfjsLib) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+
+    script.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      resolve();
+    };
+
+    script.onerror = () => {
+      console.error("Failed to load PDF.js");
+      reject(new Error("Failed to load PDF.js"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+/* =========================
+   GLOBAL SEARCH
+========================= */
+function globalSearch(query) {
+  isSearching = true;
+  fileList.innerHTML = `<li class="file-item loading">Searching...</li>`;
+  thumbsContainer.innerHTML = `<div class="no-thumbs">Searching...</div>`;
+
+  fetch(`/coreapi/api/search/?q=${encodeURIComponent(query)}`)
+    .then(r => {
+      if (!r.ok) {
+        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+      }
+      return r.json();
+    })
+    .then(data => {
+      console.log("Search results:", data);
+      renderFileList(data.folders || [], data.files || []);
+      renderThumbs(data.files || []);
+    })
+    .catch(error => {
+      console.error("Search error:", error);
+      fileList.innerHTML = `<li class="file-item error">Search failed: ${error.message}</li>`;
+      thumbsContainer.innerHTML = `<div class="no-thumbs">Search failed</div>`;
+    });
+}
+
+/* =========================
+   REFRESH
+========================= */
+document.getElementById("refreshFolders").onclick = () => {
+  console.log("Refreshing folders");
+  fetch("/coreapi/api/refresh/", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrftoken
+    }
+  })
+  .then(r => {
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    }
+    return r.json();
+  })
+  .then(() => {
+    rootFoldersCache = null;
+    searchInput.value = "";
+    currentFolder = "";
+    loadFolder("");
+  })
+  .catch(error => {
+    console.error("Refresh error:", error);
+    alert("Refresh failed: " + error.message);
+  });
+};
+
+/* =========================
+   FULLSCREEN MODAL
+========================= */
+const fullscreenModal = document.getElementById("fullscreenModal");
+const modalFrame = document.getElementById("modalFrame");
+const modalImage = document.getElementById("modalImage");
+
+document.getElementById("openFullBtn").onclick = () => {
+  if (!currentFile || !currentPreviewUrl) {
+    alert("Select a file first");
+    return;
+  }
+  const ext = currentFile.name.split(".").pop().toLowerCase();
+
+  // Mobile → open native viewer
+  if (window.innerWidth < 768) {
+    window.open(currentPreviewUrl, "_blank");
+    return;
+  }
+
+  // Desktop → modal
+  fullscreenModal.setAttribute("aria-hidden", "false");
+  modalFrame.classList.add("hidden");
+  modalImage.classList.add("hidden");
+
+  if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+    modalImage.src = currentPreviewUrl;
+    modalImage.classList.remove("hidden");
+  } else {
+    modalFrame.src = currentPreviewUrl;
+    modalFrame.classList.remove("hidden");
+  }
+};
+
+document.getElementById("modalClose").onclick = () => {
+  fullscreenModal.setAttribute("aria-hidden", "true");
+  modalFrame.src = "";
+  modalImage.src = "";
+};
+
+/* =========================
+   SHARE & DOWNLOAD
+========================= */
+const modalShareBtn = document.getElementById("modalShare");
+const shareButtonsContainer = document.getElementById("shareButtonsContainer");
+
+modalShareBtn.onclick = async (e) => {
+  e.preventDefault();
+
+  if (navigator.share && currentPreviewUrl) {
+    try {
+      await navigator.share({
+        title: "Document",
+        url: window.location.origin + currentPreviewUrl
+      });
+    } catch (error) {
+      console.log("Share failed:", error);
+    }
+  } else {
+    shareButtonsContainer.classList.toggle("hidden");
+  }
+};
+
+function updateShareLinks(url) {
+  const encoded = encodeURIComponent(window.location.origin + url);
+
+  document.getElementById("shareWhatsapp").href = `https://wa.me/?text=${encoded}`;
+  document.getElementById("shareTelegram").href = `https://t.me/share/url?url=${encoded}`;
+  document.getElementById("shareEmail").href = `mailto:?subject=Document&body=${encoded}`;
+
+  document.getElementById("shareCopy").onclick = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(window.location.origin + url).then(() => {
+      alert("Link copied to clipboard");
+    }).catch(error => {
+      console.error("Copy failed:", error);
+      alert("Failed to copy link");
+    });
+  };
+}
+
+const modalDownloadBtn = document.getElementById("modalDownloadBtn");
+
+modalDownloadBtn.onclick = () => {
+  if (!currentFile) {
+    alert("No file selected");
+    return;
+  }
+
+  const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+  window.location.href = downloadUrl;
+};
+
+/* =========================
+   INIT
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Dashboard JS loaded");
+  loadFolder("");
+});
+
+// enforce landscape 
+
+function enforceTabletLandscape() {
+  const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
+  const isPortrait = window.innerHeight > window.innerWidth;
+
+  const blocker = document.getElementById("orientationBlocker");
+
+  if (isTablet && isPortrait) {
+    blocker.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  } else {
+    blocker.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+}
+
+window.addEventListener("resize", enforceTabletLandscape);
+window.addEventListener("orientationchange", enforceTabletLandscape);
+document.addEventListener("DOMContentLoaded", enforceTabletLandscape);
+
+
+// sketch............
+
+const canvas = document.getElementById("sketchCanvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let history = [];
+let brushColor = "#000";
+let brushSize = 2;
+
+function saveState() {
+  history.push(canvas.toDataURL());
+  if (history.length > 20) history.shift();
+}
+
+canvas.addEventListener("mousedown", e => {
+  drawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+  saveState();
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!drawing) return;
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.strokeStyle = brushColor;
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = "round";
+  ctx.stroke();
+});
+
+canvas.addEventListener("mouseup", () => {
+  drawing = false;
+  ctx.closePath();
+});
+
+document.getElementById("clearCanvas").onclick = () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
+
+document.getElementById("undoCanvas").onclick = () => {
+  if (!history.length) return;
+  const img = new Image();
+  img.src = history.pop();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+};
+
+document.getElementById("colorPicker").onchange = e => {
+  brushColor = e.target.value;
+};
+
+document.getElementById("brushSize").oninput = e => {
+  brushSize = e.target.value;
+};
+
+// auto scroll to view...........
+
+document.querySelector(".preview-section")?.scrollIntoView({
+  behavior: "smooth",
+  block: "start"
+});
+
+</script>
+
+
+{% endblock %}

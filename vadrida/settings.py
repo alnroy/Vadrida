@@ -27,9 +27,25 @@ SECRET_KEY = 'django-insecure-_ig@9s8_3u#jib24eap(oydc$olvq)=)#4pb@9%u^=2)y8!6*$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "192.168.29.118",
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://192.168.29.118:8000",
+]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://127.0.0.1:8000",
+#     "http://localhost:8000"
+# ]
+
 
 # Application definition
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -44,6 +60,8 @@ INSTALLED_APPS = [
     'coreapi',
     'django_ratelimit',
     'crispy_forms',
+    "chat",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -61,22 +79,6 @@ MIDDLEWARE+= [
 ROOT_URLCONF = 'vadrida.urls'
 
 BASE_DIR=Path(__file__).resolve().parent.parent
-
-DOCUMENTS_FOLDER = r"G:\My Drive\1005.FOR_IT"
-
-if not os.path.exists(DOCUMENTS_FOLDER):
-    print(f"⚠️  WARNING: Documents folder not found: {DOCUMENTS_FOLDER}")
-    print("Make sure:")
-    print("1. Google Drive is running and synced")
-    print("2. The path is correct")
-    print("3. You have read permissions")
-
-else:
-    print(f"✓ Documents folder found: {DOCUMENTS_FOLDER}")
-    print("Files inside DOCUMENTS_FOLDER:")
-    print(os.listdir(DOCUMENTS_FOLDER))
-
-
 
 ALLOWED_FILE_EXTENSIONS = [
     '.pdf', '.doc', '.docx', 
@@ -171,8 +173,11 @@ REST_FRAMEWORK = {
 }
 
 
-SESSION_COOKIE_SECURE = True      # Only HTTPS
-CSRF_COOKIE_SECURE = True         # Only HTTPS
+SESSION_COOKIE_SECURE = False      # Only HTTP
+CSRF_COOKIE_SECURE = False         #  HTTP
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 43200  # 12 hours
 SESSION_ENGINE = 'django.contrib.sessions.backends.db' 
@@ -187,10 +192,6 @@ CACHES = {
     }
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000"
-]
 
 
 FULL_DATA_ROOT = os.path.join(BASE_DIR, "data")
@@ -198,4 +199,15 @@ FULL_DATA_ROOT = os.path.join(BASE_DIR, "data")
 GENERATED_PDFS_ROOT = os.path.join(BASE_DIR , "generated_pdfs")
 # Ensure directories exist
 os.makedirs(GENERATED_PDFS_ROOT, exist_ok=True)
-DOCUMENTS_ROOT = r"G:\My Drive\1005.FOR_IT"
+DOCUMENTS_ROOT = r"C:\Users\asus\2025-2026_Invoices"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+ASGI_APPLICATION = "vadrida.asgi.application"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "chat_uploads"

@@ -15,6 +15,9 @@ from datetime import datetime
 from django.conf import settings
 from coreapi.search_index import get_index
 from coreapi.search_index import refresh_index
+from docx import Document
+import openpyxl
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 def refresh_files(request):
     refresh_index()
@@ -23,6 +26,8 @@ def refresh_files(request):
 # ----------------------------
 # Login / Logout / Dashboard
 # ----------------------------
+
+@ensure_csrf_cookie
 def login_page(request):
     if request.session.get("user_id"):
         return redirect("coreapi:dashboard")
@@ -92,7 +97,7 @@ def logout_api(request):
 # ----------------------------
 # File / Folder Handling
 # ----------------------------
-DOCUMENTS_FOLDER = r"C:\Users\asus\Desktop\2025-2026_Invoices"
+DOCUMENTS_FOLDER = settings.DOCUMENTS_ROOT
 
 def office_dashboard(request):
     """Main dashboard view"""
@@ -141,33 +146,6 @@ def scan_folder_tree(base_folder):
 
     return folders, files
 
-
-# all folder contents =============
-
-
-def folder_contents(request):
-    rel_path = request.GET.get("path", "")
-    base = settings.DOCUMENTS_ROOT
-    abs_path = os.path.normpath(os.path.join(base, rel_path))
-
-    if not abs_path.startswith(base):
-        return JsonResponse({"folders": [], "files": []})
-
-    folders, files = [], []
-
-    for name in os.listdir(abs_path):
-        full = os.path.join(abs_path, name)
-        if os.path.isdir(full):
-            folders.append({"name": name, "path": os.path.join(rel_path, name)})
-        else:
-            files.append({
-                "name": name,
-                "path": os.path.join(rel_path, name),
-                "extension": os.path.splitext(name)[1].lower(),
-                "size": os.path.getsize(full)
-            })
-
-    return JsonResponse({"folders": folders, "files": files})
 
 
 def categorize_file(extension):
@@ -243,6 +221,10 @@ def get_folder_contents_api(request):
     rel_path = request.GET.get("path", "")
     base = os.path.realpath(DOCUMENTS_FOLDER)
     abs_path = os.path.realpath(os.path.join(base, rel_path))
+    print("DOCUMENTS_ROOT =", settings.DOCUMENTS_ROOT)
+    print("ABS PATH =", abs_path)
+    print("EXISTS =", os.path.exists(abs_path))
+    print("IS DIR =", os.path.isdir(abs_path))
 
     # Security check
     if not abs_path.startswith(base) or not os.path.isdir(abs_path):
@@ -282,9 +264,10 @@ def get_folder_contents_api(request):
 
 
 
+
 @require_http_methods(["GET"])
 def serve_file(request):
-    rel_path = request.GET.get("path", "")
+    rel_path = request.GET.get("path")
     if not rel_path:
         raise Http404("File path not provided")
 
@@ -295,22 +278,25 @@ def serve_file(request):
         raise Http404("Invalid file path")
 
     if not os.path.exists(full_path):
-        raise Http404(f"File not found: {rel_path}")
+        raise Http404("File not found")
 
     mime_type, _ = mimetypes.guess_type(full_path)
-    mime_type = mime_type or "application/pdf"
-    download = request.GET.get("download", "false").lower() == "true"
+    mime_type = mime_type or "application/octet-stream"
 
-    response = FileResponse(open(full_path, "rb"), content_type=mime_type)
-    if download:
-        response["Content-Disposition"] = f'attachment; filename="{os.path.basename(full_path)}"'
-    else:
-        response["Content-Disposition"] = f'inline; filename="{os.path.basename(full_path)}"'
+    download = request.GET.get("download") == "true"
+
+    response = FileResponse(
+        open(full_path, "rb"),
+        content_type=mime_type,
+        as_attachment=download,
+        filename=os.path.basename(full_path),
+    )
 
     response["Accept-Ranges"] = "bytes"
-    response["X-Frame-Options"] = "ALLOWALL"
+
+    # OPTIONAL — only if iframe embedding is required
     response["Content-Security-Policy"] = "frame-ancestors *"
-    response["Access-Control-Allow-Origin"] = "*"
+
     return response
 
 
@@ -354,7 +340,6 @@ def list_all_folders_api(request):
 
 # ------------------------------------------------
 
-
 @csrf_protect
 @require_http_methods(["POST"])
 def analyze_file(request):
@@ -375,103 +360,115 @@ def analyze_file(request):
         if not files:
             return JsonResponse({"success": False, "error": "No files selected"})
 
-        # ---------------------------
-        # STEP 1: Create TEMP merged PDF
-        # ---------------------------
-        merger = PdfMerger()
+        ocr_inputs = []
+        direct_texts = []
 
+        # ---------------------------
+        # STEP 1: CLASSIFY FILES
+        # ---------------------------
         for f in files:
             rel_path = f.get("file_path")
             if not rel_path:
                 continue
 
-            abs_path = os.path.normpath(os.path.join(settings.DOCUMENTS_ROOT, rel_path))
+            abs_path = os.path.normpath(
+                os.path.join(settings.DOCUMENTS_ROOT, rel_path)
+            )
 
-            # Security: prevent ../ traversal
             if not abs_path.startswith(settings.DOCUMENTS_ROOT):
                 return JsonResponse({"success": False, "error": "Invalid file path"})
 
             if not os.path.exists(abs_path):
                 continue
 
-            if abs_path.lower().endswith(".pdf"):
-                merger.append(abs_path)
-            else:
+            ext = abs_path.lower()
+
+            if ext.endswith(".pdf"):
+                ocr_inputs.append(abs_path)
+
+            elif ext.endswith((".jpg", ".jpeg", ".png", ".bmp", ".tiff")):
                 img = Image.open(abs_path).convert("RGB")
                 buf = io.BytesIO()
                 img.save(buf, format="PDF")
                 buf.seek(0)
-                merger.append(buf)
+                ocr_inputs.append(buf)
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        temp_pdf_path = os.path.join(
-            settings.GENERATED_PDFS_ROOT, f"temp_{timestamp}.pdf"
-        )
+            elif ext.endswith(".docx"):
+                direct_texts.append(extract_text_from_docx(abs_path))
 
-        merger.write(temp_pdf_path)
-        merger.close()
+            elif ext.endswith((".xls", ".xlsx")):
+                direct_texts.append(extract_text_from_excel(abs_path))
 
-        # ---------------------------
-        # STEP 2: Google Vision OCR
-        # ---------------------------
-        from google.cloud import vision
-
-        client = vision.ImageAnnotatorClient()
-
-        with open(temp_pdf_path, "rb") as f:
-            pdf_content = f.read()
-
-        input_config = vision.InputConfig(
-            content=pdf_content,
-            mime_type="application/pdf"
-        )
-
-        feature = vision.Feature(
-            type_=vision.Feature.Type.DOCUMENT_TEXT_DETECTION
-        )
-
-        request_vision = vision.AnnotateFileRequest(
-            input_config=input_config,
-            features=[feature]
-        )
-
-        response = client.batch_annotate_files(
-            requests=[request_vision]
-        )
-
-        # ---------------------------
-        # STEP 3: Extract text
-        # ---------------------------
         extracted_text = []
 
-        for file_response in response.responses:
-            for page_response in file_response.responses:
-                if page_response.full_text_annotation:
-                    extracted_text.append(
-                        page_response.full_text_annotation.text
-                    )
+        # ---------------------------
+        # STEP 2: OCR (ONLY IF NEEDED)
+        # ---------------------------
+        if ocr_inputs:
+            merger = PdfMerger()
+            for item in ocr_inputs:
+                merger.append(item)
 
-        full_text = "\n".join(extracted_text).strip()
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            temp_pdf_path = os.path.join(
+                settings.GENERATED_PDFS_ROOT,
+                f"temp_{timestamp}.pdf"
+            )
+
+            merger.write(temp_pdf_path)
+            merger.close()
+
+            from google.cloud import vision
+            client = vision.ImageAnnotatorClient()
+
+            with open(temp_pdf_path, "rb") as f:
+                pdf_content = f.read()
+
+            request_vision = vision.AnnotateFileRequest(
+                input_config=vision.InputConfig(
+                    content=pdf_content,
+                    mime_type="application/pdf"
+                ),
+                features=[
+                    vision.Feature(
+                        type_=vision.Feature.Type.DOCUMENT_TEXT_DETECTION
+                    )
+                ]
+            )
+
+            response = client.batch_annotate_files(
+                requests=[request_vision]
+            )
+
+            for file_response in response.responses:
+                for page_response in file_response.responses:
+                    if page_response.full_text_annotation:
+                        extracted_text.append(
+                            page_response.full_text_annotation.text
+                        )
+
+            os.remove(temp_pdf_path)
+
+        # ---------------------------
+        # STEP 3: MERGE ALL TEXT
+        # ---------------------------
+        full_text = "\n".join(direct_texts + extracted_text).strip()
 
         if not full_text:
             return JsonResponse({
                 "success": False,
-                "error": "No text detected in documents"
+                "error": "No text detected"
             })
 
         # ---------------------------
-        # STEP 4: Save TXT to user folder
+        # STEP 4: SAVE RESULT
         # ---------------------------
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         txt_filename = f"extracted_{timestamp}.txt"
         txt_path = os.path.join(user_folder, txt_filename)
 
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(full_text)
-
-        # ---------------------------
-        # STEP 5: Cleanup TEMP PDF
-        # ---------------------------
-        os.remove(temp_pdf_path)
 
         return JsonResponse({
             "success": True,
@@ -481,3 +478,24 @@ def analyze_file(request):
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+def extract_text_from_docx(path):
+    doc = Document(path)
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def extract_text_from_excel(path):
+    wb = openpyxl.load_workbook(path, data_only=True)
+    texts = []
+
+    for sheet in wb.worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                if cell.value:
+                    texts.append(str(cell.value))
+
+    return "\n".join(texts)
+
+def feedback(request):
+    return render(request, "feedback.html")
+
