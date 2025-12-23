@@ -209,5 +209,15 @@ CHANNEL_LAYERS = {
 
 ASGI_APPLICATION = "vadrida.asgi.application"
 
+# Add this to your settings.py (replace the MEDIA section)
+
+# MEDIA FILES CONFIGURATION
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "chat_uploads"
+MEDIA_ROOT = BASE_DIR / "media"  # Changed from chat_uploads
+
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'feedback_sketches'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'feedback_pdfs'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'chat_uploads'), exist_ok=True)  # Keep for chat
+
+LOGIN_URL = '/coreapi/login/'

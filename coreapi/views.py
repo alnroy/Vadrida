@@ -2,13 +2,13 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.hashers import check_password
 from .models import UserProfile
 import json
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.middleware.csrf import get_token
 from django_ratelimit.decorators import ratelimit
 import os,io
 import mimetypes
 from django.http import JsonResponse, FileResponse, Http404
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from PyPDF2 import PdfMerger
 from PIL import Image
 from datetime import datetime
@@ -18,6 +18,13 @@ from coreapi.search_index import refresh_index
 from docx import Document
 import openpyxl
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.core.files.base import ContentFile
+import base64
+from django.db.models import Q, Max
+import uuid
+from django.contrib.auth.decorators import login_required
+from .models import SiteVisitReport
+
 
 def refresh_files(request):
     refresh_index()
@@ -34,19 +41,25 @@ def login_page(request):
     return render(request, "login.html")
 
 
-def admin_dashboard(request):
-    users = UserProfile.objects.all()
-    return render(request, "admin_dashboard.html", {"users": users})
+# def admin_dashboard(request):
+#     users = UserProfile.objects.all()
+#     return render(request, "admin_dashboard.html", {"users": users})
 
 
 def dashboard(request):
     role = request.session.get("user_role")
-    if role == "admin":
-        return redirect("coreapi:admin_dashboard")
+    # if role == "admin":
+    #     return redirect("coreapi:admin_dashboard")
     if role in ["office", "IT"]:
         return redirect("coreapi:office_dashboard")
     return JsonResponse({"error": "Invalid"}, status=401)
 
+# ================================
+
+def admin_dash(request):
+    return render(request,"admin_dashboard.html")
+
+# ==========================
 
 @csrf_protect
 @ratelimit(key="ip", rate="5/m", block=True)
@@ -496,6 +509,77 @@ def extract_text_from_excel(path):
 
     return "\n".join(texts)
 
+
 def feedback(request):
+    """Render the feedback form page"""
+    if not request.session.get("user_id"):
+        return redirect("coreapi:login_page")
     return render(request, "feedback.html")
 
+@csrf_protect
+@require_POST
+def save_feedback(request):
+    # 1. IMMEDIATE CHECK: Is the user logged in?
+
+    user_id=request.session.get("user_id")
+    print(f"Debug: User id : {user_id} ")
+    user_name=request.session.get("user_name")
+    print("User Name : ",user_name)
+
+    if not request.session.get("user_id"):
+        return JsonResponse({
+            'success': False, 
+            'error': 'Authentication failed. Browser did not send session cookie.'
+        }, status=401)
+
+    try:
+        # 2. Parse the JSON body
+        payload = json.loads(request.body)
+        
+        # ... (Your existing helper function and logic) ...
+        
+        # Safe extraction helper
+        def get_nested(data, key_path):
+            keys = key_path.split('.')
+            val = data
+            for k in keys:
+                val = val.get(k)
+                if val is None: return None
+            return val
+
+        # Handle lowercase/uppercase mix
+        office_file_no = get_nested(payload, 'Valuers.Office_file_no') or get_nested(payload, 'valuers.Office_file_no')
+        applicant_name = get_nested(payload, 'Valuers.applicant_name') or get_nested(payload, 'valuers.applicant_name')
+
+        # 3. Handle the Sketch
+        sketch_file = None
+        sketch_b64 = payload.get('sketch_data')
+
+        if sketch_b64 and 'base64,' in sketch_b64:
+            format, imgstr = sketch_b64.split(';base64,')
+            ext = format.split('/')[-1]
+            filename = f"sketch_{office_file_no or 'unknown'}_{uuid.uuid4()}.{ext}"
+            sketch_file = ContentFile(base64.b64decode(imgstr), name=filename)
+            payload['sketch_data'] = "Saved as ImageField"
+
+        # 4. Save to Database
+        # This line was crashing because request.user was Anonymous
+        report = SiteVisitReport.objects.create(
+            user=user_name, 
+            office_file_no=office_file_no,
+            applicant_name=applicant_name,
+            form_data=payload,
+            sketch=sketch_file
+        )
+
+        return JsonResponse({
+            'success': True, 
+            'message': 'Report saved successfully',
+            'report_id': report.id
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error saving report: {str(e)}") 
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
