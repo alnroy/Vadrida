@@ -329,9 +329,6 @@ function renderFileList(folders, files) {
 /* =========================
    THUMBNAILS
 ========================= */
-/* =========================
-   THUMBNAILS (PDF FIX)
-========================= */
 
 // 1. Helper to load PDF.js library if not present
 function loadPdfJsIfNeeded() {
@@ -400,78 +397,64 @@ async function renderPdfThumbnail(pdfUrl, container) {
 }
 
 // 3. Main Thumbnail Function
-async function renderThumbs(files) {
+/* =========================
+   FAST SERVER-SIDE THUMBNAILS
+   (No PDF.js needed for list view!)
+========================= */
+function renderThumbs(files) {
   thumbsContainer.innerHTML = "";
 
-  if (!files || !files.length) {
-    thumbsContainer.innerHTML = `<div class="no-thumbs" style="padding:10px; color:#999;">No files</div>`;
+  if (!files.length) {
+    thumbsContainer.innerHTML = `<div class="no-thumbs">No files to preview</div>`;
     return;
   }
 
-  for (const file of files) {
+  // Clear any previous processing queue
+  // (This fixes the "Files appearing in wrong folder" issue)
+  // Since we use standard <img> tags now, the browser handles cancellation automatically.
+
+  files.forEach(file => {
     const card = document.createElement("div");
     card.className = "thumb-item";
     
-    // --- PATH BUILDING LOGIC (CRITICAL) ---
-    let fullPath = file.path;
-    if (!fullPath) {
-        // If path is missing from API, build it: currentFolder + filename
-        const folderPrefix = currentFolder ? currentFolder.replace(/\/$/, '') + '/' : '';
-        fullPath = folderPrefix + file.name;
-    }
-    // Create the valid URL
-    const fileUrl = `/coreapi/serve-file/?path=${encodeURIComponent(fullPath)}`;
-    // --------------------------------------
-
-    const ext = file.name.includes('.') ? file.name.split(".").pop().toLowerCase() : 'file';
-
-    // IMAGE
-    if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-      const img = document.createElement("img");
-      img.src = fileUrl;
-      img.loading = "lazy";
-      img.style.objectFit = "cover";
-      img.style.width = "100%";
-      img.style.height = "100%";
-      
-      img.onerror = () => {
-        card.innerHTML = `<div class="file-icon"><i class="fas fa-image"></i></div>`;
-      };
-      card.appendChild(img);
-    } 
-    // PDF (Pass the URL, not the file object)
-    else if (ext === "pdf") {
-      // Create a loading placeholder first
-      card.innerHTML = `<div class="file-icon"><i class="fas fa-spinner fa-spin"></i></div>`;
-      // Call the renderer
-      await renderPdfThumbnail(fileUrl, card);
-      // Remove spinner if canvas is added (renderPdfThumbnail appends, doesn't replace)
-      const spinner = card.querySelector('.file-icon');
-      if(spinner && card.querySelector('canvas')) spinner.remove();
-    } 
-    // OTHER
-    else {
-      card.innerHTML = `
-        <div class="file-icon" style="text-align: center; color: #6b7280;">
-          <i class="fas fa-file" style="font-size: 24px;"></i><br>
-          <span style="font-size: 10px; text-transform: uppercase;">${ext}</span>
-        </div>`;
-    }
-
-    // Click to Open
-    card.onclick = () => {
-        document.querySelectorAll('.thumb-item').forEach(el => el.style.borderColor = '#fff');
-        card.style.borderColor = '#3b82f6';
-        
-        // Ensure the global file object has the path for the big preview
-        if (!file.path) file.path = fullPath;
-        
-        loadBigPreview(file);
-        setFileInfo(file);
-    };
+    const ext = file.name.split(".").pop().toLowerCase();
     
+    // Logic: If it's an Image OR a PDF, ask server for a thumbnail
+    if (['jpg', 'jpeg', 'png', 'gif', 'pdf'].includes(ext)) {
+        const img = document.createElement("img");
+        
+        // --- THE MAGIC LINE ---
+        // We point the image source to our new Python view
+        // We add a timestamp to prevent the browser from caching the WRONG image
+        img.src = `/coreapi/api/thumbnail/?path=${encodeURIComponent(file.path)}&t=${new Date().getTime()}`;
+        
+        img.loading = "lazy"; // Only load when scrolled into view
+        
+        // Setup visuals
+        img.style.objectFit = "contain";
+        img.style.width = "100%";
+        img.style.height = "100%";
+
+        // Error handling (If server fails, show icon)
+        img.onerror = () => {
+            card.innerHTML = `<div class="file-icon"><i class="fas fa-file-pdf"></i><br>${ext.toUpperCase()}</div>`;
+        };
+
+        card.appendChild(img);
+    } else {
+        // Generic Icon for Word/Excel/etc
+        card.innerHTML = `<div class="file-icon"><i class="fas fa-file-alt"></i><br>${ext.toUpperCase()}</div>`;
+    }
+
+    // Click Event (Keep this same as before)
+    card.onclick = () => {
+      document.querySelectorAll(".file-item").forEach(el => el.classList.remove("selected"));
+      loadBigPreview(file);
+      setFileInfo(file);
+    };
+
     thumbsContainer.appendChild(card);
-  }
+  });
 }
 /* =========================
    PREVIEW

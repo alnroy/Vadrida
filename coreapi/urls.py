@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/analyze/', views.analyze_file, name='analyze_file'),
     path("api/search/", views.search_files, name="search_files"),
     path("api/refresh/", views.refresh_files, name="refresh_files"),
+    path('api/thumbnail/', views.get_thumbnail, name='get_thumbnail'),
 
     # File serving
     path('serve-file/', views.serve_file, name='serve_file'),

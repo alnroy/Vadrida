@@ -27,36 +27,26 @@ SECRET_KEY = 'django-insecure-_ig@9s8_3u#jib24eap(oydc$olvq)=)#4pb@9%u^=2)y8!6*$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS=["*"]
+# ALLOWED_HOSTS=["*"]
 
-# ALLOWED_HOSTS = [
-#     '.ngrok-free.app',
-#     '.ngrok-free.dev',
-#     "localhost",
-#     "127.0.0.1",
-#     "192.168.29.118",
-#     'www.vadrida.com',
-#     'vadrida.com',
-# ]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "192.168.29.118",
+    'www.vadrida.com',
+    'vadrida.com',
+    'test.vadrida.com'
+]
 
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
-    'https://*.ngrok-free.dev',
     "http://192.168.29.118:8000",
     'https://www.vadrida.com',
     'https://vadrida.com',
-    'https://*.trycloudflare.com'
+    'https://*.trycloudflare.com',
+    'https://test.vadrida.com'
 ]
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://127.0.0.1:8000",
-#     "http://localhost:8000"
-# ]
-
-
-# Application definition
-
 
 
 INSTALLED_APPS = [
@@ -212,8 +202,12 @@ FULL_DATA_ROOT = os.path.join(BASE_DIR, "data")
 GENERATED_PDFS_ROOT = os.path.join(BASE_DIR , "generated_pdfs")
 # Ensure directories exist
 os.makedirs(GENERATED_PDFS_ROOT, exist_ok=True)
-DOCUMENTS_ROOT = r"G:\My Drive\2025_2026"
 
+if os.name == 'posix':
+    DOCUMENTS_ROOT = "/mnt/g/My Drive/2025_2026"
+else:
+    DOCUMENTS_ROOT = r"G:\My Drive\2025_2026"
+    
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
@@ -240,3 +234,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 mimetypes.add_type("text/css", ".css", True)
 mimetypes.add_type("text/javascript", ".js", True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+}

@@ -878,38 +878,39 @@
             </div>
 
             <!-- Construction Timeline Table -->
-         <div class="table-container">
-            <table class="analysis-table" id="timelineTable" style="table-layout: fixed; width: 100%;">
-              <tbody>
-                <tr id="row_percent">
-                  <td style="width: 100px; background: #f0f0f0; font-weight: bold;">% Area</td>
-                  
-                  <td rowspan="2" id="controlCell" style="width: 40px; text-align: center; vertical-align: middle; background: #e8f0fe; border-left: 2px solid #ccc;">
-                    <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
-                        <button type="button" class="timeline-btn add-btn" onclick="manualAddColumn()" title="Add Column">
-                          <i class="fas fa-plus"></i>
-                        </button>
-                        <button type="button" class="timeline-btn remove-btn" onclick="removeLastColumn()" title="Remove Last">
-                          <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr id="row_year">
-                  <td style="width: 100px; background: #f0f0f0; font-weight: bold;">Year</td>
+         <div class="form-group">
+            <label class="form-label">Year of Construction</label>
+            <div class="table-container">
+              <table class="analysis-table" id="timelineTable" style="table-layout: fixed; width: 100%;">
+                <tbody>
+                  <tr id="row_year">
+                    <td style="width: 100px; background: #f0f0f0; font-weight: bold;">Year</td>
+                    
+                    <td rowspan="2" id="controlCell" style="width: 40px; text-align: center; vertical-align: middle; background: #e8f0fe; border-left: 2px solid #ccc;">
+                      <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                          <button type="button" class="timeline-btn add-btn" onclick="manualAddColumn()" title="Add Column">
+                            <i class="fas fa-plus"></i>
+                          </button>
+                          <button type="button" class="timeline-btn remove-btn" onclick="removeLastColumn()" title="Remove Last">
+                            <i class="fas fa-minus"></i>
+                          </button>
+                      </div>
+                    </td>
                   </tr>
-              </tbody>
-            </table>
-          </div>
 
-          <input type="hidden" data-path="Building_analysis.construction_year" id="finalConstructionString">
-
-            <div class="form-group">
-              <label class="form-label">Notes/no of carparks/wardrobes/kitchen cabinets/flooring material/interior decorations, any other amenities..?</label>
-              <textarea data-path="Building_analysis.amenities_notes" class="form-textarea" rows="4"></textarea>
+                  <tr id="row_percent">
+                    <td style="width: 100px; background: #f0f0f0; font-weight: bold;">% Area</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+            <input type="hidden" data-path="Building_analysis.construction_year" id="finalConstructionString">
           </div>
+
+        <div class="form-group">
+          <label class="form-label">Notes/no of carparks/wardrobes/kitchen cabinets/flooring material/interior decorations, any other amenities..?</label>
+          <textarea data-path="Building_analysis.amenities_notes" class="form-textarea" rows="4"></textarea>
+        </div>
 
           <!-- VIII. Landmark and Layout (Handsketch) -->
           <div class="form-section-group">
@@ -1009,87 +1010,98 @@
   </div>
 </div>
 <div id="sketchModal" class="sketch-modal-overlay hidden">
-    <div class="sketch-toolbar-container">
-      
-      <div class="toolbar-section">
-          <div class="section-label">Tools</div>
-          <div class="tools-grid">
-              <button onclick="setTool('select')" class="tool-btn" title="Select / Pan (V)"><i class="fas fa-hand-paper"></i></button>
-              <button onclick="setTool('brush')" class="tool-btn active" title="Pencil (P)"><i class="fas fa-pencil-alt"></i></button>
-              <button onclick="setTool('eraser')" class="tool-btn" title="Eraser (E)"><i class="fas fa-eraser"></i></button>
-              <button onclick="setTool('text')" class="tool-btn" title="Text (T)"><i class="fas fa-font"></i></button>
-              <button onclick="fillSelected()" class="tool-btn" title="Fill Shape Color"><i class="fas fa-fill-drip"></i></button>
-          </div>
-      </div>
+    
+    <div id="sketchSidebar" class="sketch-toolbar-container">
+        
+        <button onclick="toggleSketchSidebar()" class="sidebar-toggle-btn" title="Toggle Toolbar">
+            <i id="toggleIcon" class="fas fa-chevron-left"></i>
+        </button>
 
-      <div class="toolbar-section">
-          <div class="section-label">Shapes</div>
-          <div class="tools-grid">
-              <button onclick="setTool('line')" class="tool-btn"><i class="fas fa-slash"></i></button>
-              <button onclick="setTool('rect')" class="tool-btn"><i class="far fa-square"></i></button>
-              <button onclick="setTool('circle')" class="tool-btn"><i class="far fa-circle"></i></button>
-              <button onclick="setTool('arrow')" class="tool-btn"><i class="fas fa-long-arrow-alt-right"></i></button>
-              <button onclick="setTool('triangle')" class="tool-btn"><i class="fas fa-caret-up"></i></button>
-          </div>
-      </div>
+        <div class="toolbar-section tools-section">
+            <div class="section-label">Tools</div>
+            <div class="tools-grid">
+                <button onclick="setTool('select')" class="tool-btn" title="Select (V)"><i class="fas fa-hand-paper"></i></button>
+                
+                <button onclick="setTool('brush')" class="tool-btn active keep-visible" title="Pencil (P)"><i class="fas fa-pencil-alt"></i></button>
+                <button onclick="setTool('eraser')" class="tool-btn keep-visible" title="Eraser (E)"><i class="fas fa-eraser"></i></button>
+                
+                <button onclick="setTool('text')" class="tool-btn" title="Text (T)"><i class="fas fa-font"></i></button>
+                <button onclick="fillSelected()" class="tool-btn" title="Fill Shape"><i class="fas fa-fill-drip"></i></button>
+            </div>
+        </div>
 
-      <div class="toolbar-section" style="min-width: 240px;">
-          <div class="section-label">Properties</div>
-          
-          <div class="prop-row">
-              <label>Size:</label>
-              <input type="range" id="strokeSize" min="1" max="50" value="3" oninput="updateProp('size', this.value)">
-              <span id="strokeVal" style="width: 35px;">3px</span>
-          </div>
-          
-          <div class="prop-row">
-              <label>Style:</label>
-              <select id="lineStyle" onchange="updateProp('style', this.value)" class="prop-select">
-                  <option value="solid">Solid ────</option>
-                  <option value="dashed">Dashed - - -</option>
-                  <option value="dotted">Dotted . . .</option>
-              </select>
-          </div>
+        <div class="toolbar-section">
+            <div class="section-label">Shapes</div>
+            <div class="tools-grid">
+                <button onclick="setTool('line')" class="tool-btn"><i class="fas fa-slash"></i></button>
+                <button onclick="setTool('rect')" class="tool-btn"><i class="far fa-square"></i></button>
+                <button onclick="setTool('circle')" class="tool-btn"><i class="far fa-circle"></i></button>
+                <button onclick="setTool('arrow')" class="tool-btn"><i class="fas fa-long-arrow-alt-right"></i></button>
+                <button onclick="setTool('triangle')" class="tool-btn"><i class="fas fa-caret-up"></i></button>
+            </div>
+        </div>
 
-          <div class="prop-row parallel-box">
-              <label style="color: #d97706; font-weight:bold;">
-                  <input type="checkbox" id="parallelToggle"> Parallel Mode
-              </label>
-              <input type="number" id="parallelDist" value="20" class="tiny-input" title="Distance"> px
-          </div>
-      </div>
+        <div class="toolbar-section">
+            <div class="section-label">Properties</div>
+            
+            <div class="prop-row">
+                <span>Size:</span>
+                <div style="display:flex; align-items:center; gap:5px; flex:1; justify-content:end;">
+                    <input type="range" id="strokeSize" min="1" max="50" value="3" oninput="updateProp('size', this.value)" style="width: 60px;">
+                    <span id="strokeVal" style="width: 25px; text-align:right;">3px</span>
+                </div>
+            </div>
+            
+            <div class="prop-row">
+                <span>Style:</span>
+                <select id="lineStyle" onchange="updateProp('style', this.value)" class="form-select" style="padding: 2px; width: 90px;">
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                </select>
+            </div>
 
-      <div class="toolbar-section">
-          <div class="section-label">Colors</div>
-          <div class="color-picker-row">
-              <input type="color" id="mainColor" value="#000000" onchange="updateProp('color', this.value)">
-              <div class="quick-colors">
-                  <div class="c-swatch" style="background:black" onclick="setColor('#000000')"></div>
-                  <div class="c-swatch" style="background:red" onclick="setColor('#ff0000')"></div>
-                  <div class="c-swatch" style="background:blue" onclick="setColor('#0000ff')"></div>
-                  <div class="c-swatch" style="background:green" onclick="setColor('#008000')"></div>
-              </div>
-          </div>
-      </div>
+            <div class="prop-row parallel-box">
+                <label style="color: #d97706; font-weight:bold; font-size: 11px; display:flex; align-items:center; gap:5px;">
+                    <input type="checkbox" id="parallelToggle"> Parallel
+                </label>
+                <input type="number" id="parallelDist" value="20" class="tiny-input" style="width:40px;">
+            </div>
+        </div>
 
-      <div class="toolbar-section action-section">
-          <div class="section-label">View & Actions</div>
-          <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-              <button onclick="zoomCanvas(0.1)" class="tool-btn small" title="Zoom In"><i class="fas fa-search-plus"></i></button>
-              <button onclick="zoomCanvas(-0.1)" class="tool-btn small" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-              <button onclick="resetZoom()" class="tool-btn small" title="Reset View"><i class="fas fa-compress"></i></button>
-          </div>
-          <div style="display: flex; gap: 5px;">
-              <button onclick="undoSketch()" class="tool-btn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
-              <button onclick="redoSketch()" class="tool-btn" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
-              <button onclick="triggerClearSketch()" class="tool-btn danger" title="Clear All"><i class="fas fa-trash"></i></button>
-          </div>
-          <div style="margin-top: 8px; display:flex; gap:5px; width:100%;">
-              <button class="modal-btn primary small" style="flex:1;" onclick="triggerSaveSketch()">Save</button>
-              <button class="modal-btn small" style="flex:1;" onclick="closeSketchModal()">Exit</button>
-          </div>
-      </div>
-  </div>
+        <div class="toolbar-section">
+            <div class="section-label">Colors</div>
+            <div class="color-picker-row">
+                <input type="color" id="mainColor" value="#000000" onchange="updateProp('color', this.value)" style="width:40px; height:30px; border:none; padding:0;">
+                <div class="quick-colors">
+                    <div class="c-swatch" style="background:black" onclick="setColor('#000000')"></div>
+                    <div class="c-swatch" style="background:red" onclick="setColor('#ff0000')"></div>
+                    <div class="c-swatch" style="background:blue" onclick="setColor('#0000ff')"></div>
+                    <div class="c-swatch" style="background:green" onclick="setColor('#008000')"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar-section action-buttons-row" style="margin-top: auto;">
+            <div class="section-label">Actions</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+                <button onclick="undoSketch()" class="tool-btn" title="Undo"><i class="fas fa-undo"></i></button>
+                <button onclick="redoSketch()" class="tool-btn" title="Redo"><i class="fas fa-redo"></i></button>
+                <button onclick="resetZoom()" class="tool-btn" title="Reset View"><i class="fas fa-compress"></i></button>
+            </div>
+
+            <button onclick="triggerClearSketch()" class="tool-btn" style="width:100%; background:#fee2e2; color:#dc2626; border-color:#fca5a5; margin-bottom: 10px;">
+                <i class="fas fa-trash mr-2"></i> Clear Canvas
+            </button>
+
+            <div style="display:flex; gap:5px;">
+                <button class="modal-btn primary small" style="flex:1;" onclick="triggerSaveSketch()">Save</button>
+                <button class="modal-btn small" style="flex:1;" onclick="closeSketchModal()">Exit</button>
+            </div>
+        </div>
+
+    </div>
 
     <div class="sketch-canvas-container" id="sketchContainer">
         <canvas id="proCanvas" class="canvas-layer"></canvas>
@@ -1279,11 +1291,7 @@ function renderFileList(folders, files) {
    5. THUMBNAILS & PREVIEWS
 ========================= */
 /* =========================
-   UPDATED THUMBNAIL RENDERER
-========================= */
-
-/* =========================
-   UPDATED RENDER THUMBS
+   OPTIMIZED RENDER THUMBS (Sequential Loading)
 ========================= */
 async function renderThumbs(files) {
   thumbsContainer.innerHTML = "";
@@ -1293,8 +1301,8 @@ async function renderThumbs(files) {
     return;
   }
 
-  // Create all card elements first
-  const fileMap = files.map(file => {
+  // 1. Create the skeleton UI (All cards appear immediately with spinners)
+  const queue = files.map(file => {
     const card = document.createElement("div");
     card.className = "thumb-item";
     
@@ -1303,9 +1311,7 @@ async function renderThumbs(files) {
     
     // Click Event
     card.onclick = () => {
-      // Highlight selected file in list
       document.querySelectorAll(".file-item").forEach(el => el.classList.remove("selected"));
-      // Try to find the list item and select it (optional UI sync)
       loadBigPreview(file);
       setFileInfo(file);
     };
@@ -1314,11 +1320,17 @@ async function renderThumbs(files) {
     return { file, card };
   });
 
-  // Process previews in parallel
-  const promises = fileMap.map(async ({ file, card }) => {
+  // 2. Process Queue SEQUENTIALLY (One by one)
+  // This prevents freezing the browser or choking the network
+  for (const item of queue) {
+    const { file, card } = item;
     const ext = file.name.split(".").pop().toLowerCase();
 
+    // Small delay to let the UI breathe between heavy tasks
+    await new Promise(r => setTimeout(r, 50)); 
+
     if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+      // Images are fast, let the browser handle them
       const img = document.createElement("img");
       img.src = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
       img.loading = "lazy";
@@ -1328,7 +1340,7 @@ async function renderThumbs(files) {
       };
     }
     else if (ext === "pdf") {
-      // Call the function we just added above
+      // PDF: We await this, so the next one doesn't start until this finishes
       await renderPdfThumbnail(file, card);
     }
     else {
@@ -1339,73 +1351,79 @@ async function renderThumbs(files) {
         </div>
       `;
     }
-  });
-
-  await Promise.allSettled(promises);
+  }
 }
+
 /* =========================
-   ADD THIS MISSING FUNCTION
+   OPTIMIZED PDF RENDERER (With Timeout & Cleanup)
 ========================= */
 async function renderPdfThumbnail(file, container) {
+  let pdf = null;
   try {
     // 1. Ensure PDF.js is loaded
     await loadPdfJsIfNeeded();
 
-    // 2. Prepare Canvas
+    // 2. Add a Timeout Race 
+    // If a PDF takes > 10 seconds, stop trying and show an icon.
+    const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+    
+    const loadingTask = pdfjsLib.getDocument(url);
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout")), 10000)
+    );
+
+    // Race the download against the timeout
+    pdf = await Promise.race([loadingTask.promise, timeoutPromise]);
+
+    // 3. Render Page 1
+    const page = await pdf.getPage(1);
+
+    // Optimize Scale: Don't render huge canvases for small thumbs
+    // Scale 0.5 is usually plenty for a thumbnail
+    const viewport = page.getViewport({ scale: 0.5 }); 
+
     const canvas = document.createElement("canvas");
-    // specific style for thumbnail canvas to fit container
     canvas.style.width = "100%"; 
     canvas.style.height = "auto";
     canvas.style.display = "block";
     const ctx = canvas.getContext("2d");
 
-    // 3. Get File URL
-    const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
-
-    // 4. Load Document
-    const loadingTask = pdfjsLib.getDocument(url);
-    const pdf = await loadingTask.promise;
-
-    // 5. Get First Page
-    const page = await pdf.getPage(1);
-
-    // 6. Calculate Scale (Make it small for thumbnail)
-    // We assume a thumbnail width of approx 150px
-    const desiredWidth = 200; 
-    const originalViewport = page.getViewport({ scale: 1 });
-    const scale = desiredWidth / originalViewport.width;
-    const viewport = page.getViewport({ scale: scale });
-
-    // 7. Resize Canvas
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
-    // 8. Render
     await page.render({
       canvasContext: ctx,
       viewport: viewport
     }).promise;
 
-    // 9. Append to Card
-    container.innerHTML = ""; // Clear loader
+    // 4. Success!
+    container.innerHTML = ""; 
     container.appendChild(canvas);
 
   } catch (error) {
     console.error("Error rendering PDF thumb:", file.name, error);
-    // Fallback icon if PDF is corrupt or password protected
+    // Fallback icon
     container.innerHTML = `
       <div class="file-icon" style="color: #ef4444;">
         <i class="fas fa-file-pdf"></i><br>PDF
       </div>
     `;
+  } finally {
+    // 5. CRITICAL: Destroy the PDF to free memory
+    if (pdf) {
+        // pdf.js v3+ uses destroy(), older versions used cleanup()
+        if (pdf.destroy) pdf.destroy(); 
+        else if (pdf.cleanup) pdf.cleanup();
+    }
   }
 }
-
 function loadBigPreview(file) {
   currentFile = file;
   const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
   currentPreviewUrl = url;
-  bigPreviewTitle.textContent = file.name;
+  bigPreviewTitle.textContent = file.path;
 
   pdfMain.innerHTML = "";
   pdfWrapper.classList.add("hidden");
@@ -1774,12 +1792,16 @@ let currentTool = 'brush';
 // --- CANVAS SETUP ---
 function resizeCanvas() {
     if(!canvas) return;
-    const saved = JSON.stringify(elements);
-    // Make canvas slightly smaller than window to fit UI
-    canvas.width = window.innerWidth - 40;
-    canvas.height = window.innerHeight - 140; 
+    const sidebar = document.getElementById('sketchSidebar');
+    // Get width of sidebar (it changes when collapsed)
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 0; 
     
-    // Restore logic
+    const saved = JSON.stringify(elements);
+    
+    // Canvas width is Window - Sidebar
+    canvas.width = window.innerWidth - sidebarWidth;
+    canvas.height = window.innerHeight; 
+    
     if(saved) elements = JSON.parse(saved);
     renderScene();
 }
@@ -2490,22 +2512,35 @@ function getTouchCenter(e) {
 function saveSketchModal() {
     if (!activeSketchPath) return;
     
-    // 1. Generate Base64 Image
+    // 1. SAVE CURRENT VIEW STATE
+    const previousCamera = { ...camera };
+
+    // 2. RESET CAMERA TO DEFAULT (Full View / No Zoom)
+    // This forces the canvas to draw elements at their actual 1:1 positions
+    camera = { x: 0, y: 0, z: 1 }; 
+    
+    // Force a render with the "Clean" camera
+    renderScene();
+
+    // 3. GENERATE IMAGE (Now capturing the full un-zoomed canvas)
     const dataUrl = canvas.toDataURL('image/png');
     
-    // 2. Save Image to State
+    // 4. RESTORE USER'S VIEW (So they don't get disoriented)
+    camera = previousCamera;
+    renderScene(); 
+
+    // 5. Save Image to Form State
     if (!formState.images) formState.images = {};
     formState.images[activeSketchPath] = dataUrl;
 
-    // 3. Save Vectors (Critical for re-editing later)
+    // 6. Save Vectors (For re-editing)
     if (!formState.vectors) formState.vectors = {};
     formState.vectors[activeSketchPath] = JSON.parse(JSON.stringify(elements));
     
-    // 4. Update UI Preview (The little thumbnail)
+    // 7. Update UI Thumbnail
     const safeId = activeSketchPath.replace(/\./g, '_');
     const previewImg = document.getElementById(`img_preview_${safeId}`);
     
-    // Handle the Main Layout specific preview
     if(activeSketchPath === 'Sketch.main_layout') {
         const mainPreview = document.getElementById('img_preview_Sketch_main_layout');
         if(mainPreview) {
@@ -2513,7 +2548,6 @@ function saveSketchModal() {
              mainPreview.classList.remove('hidden');
         }
     } 
-    // Handle Pencil Icon previews
     else if (previewImg) {
         previewImg.src = dataUrl;
         previewImg.classList.remove('hidden');
@@ -3017,23 +3051,12 @@ function handlePercentInput(e) {
     updateTimelineString();
 }
 
-// --- 2. DOM Helper: Create Column ---
 function createColumnAtIndex(index, percentVal = "", yearVal = "") {
     const rowPercent = document.getElementById('row_percent');
     const rowYear = document.getElementById('row_year');
     const controlCell = document.getElementById('controlCell');
 
-    // Percent Input
-    const tdP = document.createElement('td');
-    const inpP = document.createElement('input');
-    inpP.type = "number";
-    inpP.className = "table-input timeline-percent";
-    inpP.placeholder = "%";
-    inpP.value = percentVal;
-    inpP.addEventListener('input', handlePercentInput);
-    tdP.appendChild(inpP);
-
-    // Year Input
+    // 1. Create Year Input (Now on Top)
     const tdY = document.createElement('td');
     const inpY = document.createElement('input');
     inpY.type = "number";
@@ -3043,9 +3066,22 @@ function createColumnAtIndex(index, percentVal = "", yearVal = "") {
     inpY.addEventListener('input', updateTimelineString);
     tdY.appendChild(inpY);
 
-    // Insert BEFORE the control cell
-    rowPercent.insertBefore(tdP, controlCell);
-    rowYear.appendChild(tdY);
+    // 2. Create Percent Input (Now on Bottom)
+    const tdP = document.createElement('td');
+    const inpP = document.createElement('input');
+    inpP.type = "number";
+    inpP.className = "table-input timeline-percent";
+    inpP.placeholder = "%";
+    inpP.value = percentVal;
+    inpP.addEventListener('input', handlePercentInput);
+    tdP.appendChild(inpP);
+
+    // INSERTION LOGIC CHANGED:
+    // Year row has the control button, so insert BEFORE it
+    rowYear.insertBefore(tdY, controlCell);
+    
+    // Percent row has no control button anymore, so just APPEND
+    rowPercent.appendChild(tdP);
 }
 
 // --- 3. DOM Helper: Remove Column ---
@@ -3053,23 +3089,23 @@ function removeColumnAtIndex(index) {
     const rowPercent = document.getElementById('row_percent');
     const rowYear = document.getElementById('row_year');
     
-    // Safety check: Don't delete the control buttons cell
-    const pChildren = Array.from(rowPercent.children); // [Label, Input1, Input2, Buttons]
-    const yChildren = Array.from(rowYear.children);    // [Label, Input1, Input2]
+    // rowYear children: [Label, Input, Input, Buttons]
+    // rowPercent children: [Label, Input, Input]
 
-    // Actual index in DOM is index + 1 (skipping label)
+    // Actual index in DOM is index + 1 (skipping the Label <td>)
     const domIndex = index + 1;
 
-    // Remove Percent Cell (if it's not the button cell)
-    if (pChildren[domIndex] && !pChildren[domIndex].hasAttribute('rowspan')) {
-        pChildren[domIndex].remove();
-    }
     // Remove Year Cell
-    if (yChildren[domIndex]) {
-        yChildren[domIndex].remove();
+    // Check if the element exists and is NOT the control cell (buttons)
+    if (rowYear.children[domIndex] && !rowYear.children[domIndex].hasAttribute('rowspan')) {
+        rowYear.children[domIndex].remove();
+    }
+
+    // Remove Percent Cell
+    if (rowPercent.children[domIndex]) {
+        rowPercent.children[domIndex].remove();
     }
 }
-
 // --- 4. Manual Buttons ---
 function manualAddColumn() {
     const allPercents = Array.from(document.querySelectorAll('.timeline-percent'));
@@ -3113,18 +3149,21 @@ function updateTimelineString() {
 }
 
 function parseTimelineString(str) {
-    // Clear existing dynamic cells (Keep Label at 0 and Button at end)
     const rowPercent = document.getElementById('row_percent');
     const rowYear = document.getElementById('row_year');
     
-    // Careful removal: remove everything between Label and Button
-    // Percent Row: Label is index 0. Button is lastChild.
-    while (rowPercent.children.length > 2) { 
-        rowPercent.removeChild(rowPercent.children[1]); 
-    }
-    // Year Row: Label is index 0.
-    while (rowYear.children.length > 1) { 
+    // CLEANUP LOGIC CHANGED due to row swap:
+    
+    // Year Row (Top): Label is index 0. Button is lastChild.
+    // Keep removing children between Label and Button
+    while (rowYear.children.length > 2) { 
         rowYear.removeChild(rowYear.children[1]); 
+    }
+    
+    // Percent Row (Bottom): Label is index 0. No buttons here anymore.
+    // Keep removing everything after label
+    while (rowPercent.children.length > 1) { 
+        rowPercent.removeChild(rowPercent.children[1]); 
     }
 
     if(!str) { createColumnAtIndex(0, ""); return; }
@@ -3138,6 +3177,29 @@ function parseTimelineString(str) {
             createColumnAtIndex(idx, "", "");
         }
     });
+}
+
+function toggleSketchSidebar() {
+    const sidebar = document.getElementById('sketchSidebar');
+    const icon = document.getElementById('toggleIcon');
+    
+    // Toggle the class
+    sidebar.classList.toggle('collapsed');
+    
+    // Change Arrow Direction & Tool Selection
+    if (sidebar.classList.contains('collapsed')) {
+        icon.className = "fas fa-chevron-right"; // Arrow points right to open
+        
+        // Ensure one of the visible tools is active (Pencil default)
+        if (currentTool !== 'brush' && currentTool !== 'eraser') {
+            setTool('brush');
+        }
+    } else {
+        icon.className = "fas fa-chevron-left"; // Arrow points left to close
+    }
+    
+    // IMPORTANT: Wait for CSS transition (300ms) then resize canvas
+    setTimeout(resizeCanvas, 310);
 }
 </script>
 

@@ -20,36 +20,43 @@
         width: 210mm; 
         min-height: 297mm; 
         background: white; 
-        padding: 15mm;
+        padding: 15mm; /* Keep padding for content */
         box-shadow: 0 0 10px rgba(0,0,0,0.5); 
         font-size: 9pt; 
-        position: relative;
+        position: relative; /* Critical for absolute positioning of logo */
         box-sizing: border-box;
         overflow: hidden;
     }
 
-    /* Print Styles: Hide buttons when generating PDF */
-    @media print {
-        .floating-save, .nav-left, .btn-save, button { display: none !important; }
-        body { background-color: white; }
-        .paper-container { margin: 0; }
-        .pdf-sheet { box-shadow: none; }
+    /* --- LOGO STYLING --- */
+    .header-logo {
+        position: absolute;
+        top: 10mm;   /* Adjust top spacing */
+        right: 15mm; /* Align with right padding */
+        width: 100px; /* Adjust size as needed */
+        height: auto;
+        object-fit: contain;
     }
 
     /* Typography & Layout */
-    h1 { margin: 0 0 10px 0; font-size: 16pt; text-transform: uppercase; text-align: center; color: #333; }
+    h1 { margin: 10px 0 15px 0; font-size: 16pt; text-transform: uppercase; text-align: center; color: #333; }
     
     .section-title { 
         background: #e0e0e0; padding: 4px 8px; font-weight: bold; 
         border: 1px solid #999; margin-top: 15px; margin-bottom: 5px; font-size: 10pt;
     }
     
-    .row { display: flex; gap: 10px; margin-bottom: 5px; align-items: flex-start; }
-    .col { flex: 1; display: flex; flex-direction: column; }
+    /* Improved Row Alignment */
+    .row { 
+        display: flex; 
+        gap: 10px; 
+        margin-bottom: 5px; 
+        align-items: baseline; /* Aligns text with input lines better */
+    }
     
-    label { font-weight: bold; color: #555; font-size: 8pt; margin-right: 5px; margin-top: 3px; white-space: nowrap; }
+    label { font-weight: bold; color: #555; font-size: 8pt; margin-right: 5px; white-space: nowrap; }
 
-    /* Input simulation */
+    /* --- FIXED INPUT SIMULATION (TEXT WRAPPING) --- */
     .field-box { 
         border-bottom: 1px dotted #000; 
         min-height: 18px; 
@@ -57,12 +64,14 @@
         background: #fcfcfc; 
         color: #000; 
         flex-grow: 1; 
-        padding: 2px 2px;
-        white-space: pre-wrap; 
-        overflow-wrap: break-word; 
-        word-wrap: break-word; 
-        word-break: break-word; 
-        height: auto; 
+        padding: 0 4px;
+        
+        /* Forces text to wrap inside the box */
+        white-space: pre-wrap;       /* Preserves lines but wraps text */
+        word-wrap: break-word;       /* Legacy support */
+        overflow-wrap: break-word;   /* Modern standard */
+        word-break: break-word;      /* Break long words if necessary */
+        
         display: block; 
         width: 100%; 
         box-sizing: border-box; 
@@ -71,103 +80,61 @@
     [contenteditable="true"]:focus { background-color: #e8f0fe; outline: none; border-bottom: 1px solid blue; }
     [contenteditable="true"]:hover { background-color: #fffde7; cursor: text; }
 
-    /* Tables */
+    /* --- IMPROVED TABLE ALIGNMENT --- */
     .report-table { 
-        width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 8pt; 
-        table-layout: fixed; 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 5px; 
+        font-size: 8pt; 
+        table-layout: fixed; /* Ensures columns respect widths */
     }
     .report-table th, .report-table td { 
-        border: 1px solid #999; padding: 3px; text-align: center; vertical-align: top;
-        overflow-wrap: break-word; word-wrap: break-word;
+        border: 1px solid #999; 
+        padding: 4px; 
+        text-align: center; 
+        vertical-align: middle; /* Centers content vertically */
+        
+        /* Ensure table text wraps */
+        overflow-wrap: break-word; 
+        word-wrap: break-word;
     }
-    .report-table th { background: #f0f0f0; }
-    .report-table .field-box { border-bottom: none; background: transparent; width: 100%; }
+    .report-table th { background: #f0f0f0; font-weight: bold; }
+    .report-table .field-box { border-bottom: none; background: transparent; width: 100%; min-height: auto; }
 
-    /* Checkbox Grids */
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-    .checkbox-item { display: flex; align-items: center; gap: 3px; font-size: 8pt; }
-    .checkbox-item input { margin: 0; }
+    /* Checkbox Alignment Fixes */
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+    .checkbox-item { display: flex; align-items: center; gap: 4px; font-size: 8pt; cursor: pointer; }
+    .checkbox-item input { margin: 0; cursor: pointer; }
 
-    /* Images */
-    .img-wrapper { border: 2px dashed #ddd; margin: 10px 0; min-height: 150px; display:flex; justify-content:center; align-items: center; background: #fafafa; position: relative; }
-    .img-wrapper img { max-width: 100%; max-height: 400px; display: block; }
-
-    /* Floating Save Button */
-    .floating-save { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-    .btn-save { background: #28a745; color: white; padding: 15px 30px; border: none; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.2s; }
-    .btn-save:hover { background: #218838; transform: scale(1.05); }
-
-    /* --- SAVE DIALOG MODAL (Chrome Style) --- */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); z-index: 2000;
-        display: flex; justify-content: center; align-items: center;
-    }
-    .save-dialog {
-        width: 650px; height: 500px; background: white; border-radius: 8px;
-        display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .dialog-header {
-        padding: 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;
-    }
-    .dialog-title { font-size: 16px; font-weight: 600; color: #333; }
-    
-    .dialog-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-    
-    /* Search & Path Bar */
-    .toolbar-row {
-        padding: 10px; background: #f9f9f9; border-bottom: 1px solid #eee; 
-        display: flex; align-items: center; gap: 8px;
-    }
-    .path-bar { flex: 1; display: flex; align-items: center; gap: 5px; }
-    .path-input {
-        flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; color: #555; font-size: 13px;
-    }
-    .search-bar { width: 200px; position: relative; }
-    .search-input {
-        width: 100%; padding: 6px 30px 6px 10px; border: 1px solid #ccc; border-radius: 20px; font-size: 13px;
-    }
-    .search-icon { position: absolute; right: 10px; top: 7px; color: #888; font-size: 12px; }
-
-    .nav-up-btn { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 5px 10px; cursor: pointer; color:#555; }
-    .nav-up-btn:hover { background: #eee; }
-
-    .folder-list {
-        flex: 1; overflow-y: auto; padding: 5px;
-    }
-    .folder-item {
-        display: flex; align-items: center; padding: 8px 10px; cursor: pointer; border-radius: 4px;
-        border-bottom: 1px solid #f0f0f0; transition: background 0.1s;
-    }
-    .folder-item:hover { background-color: #e8f0fe; }
-    .folder-icon { color: #f8d775; margin-right: 12px; font-size: 20px; }
-    .folder-name { font-size: 14px; color: #333; flex: 1; }
-    .folder-arrow { color: #ccc; font-size: 12px; }
-
-    .dialog-footer {
-        padding: 15px; border-top: 1px solid #ddd; background: #f9f9f9;
-        display: flex; justify-content: flex-end; gap: 10px;
-    }
-    .btn-dialog { padding: 8px 20px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-size: 13px; }
-    .btn-cancel { background: white; color: #333; }
-    .btn-confirm { background: #1a73e8; color: white; border: none; font-weight: 500; }
-    .btn-confirm:hover { background: #1557b0; }
-    .hidden { display: none !important; }
-    /* Add this to your style block */
+    /* Grid for tight spaces (Usage/Occupancy) */
     .checkbox-grid-2 {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* Creates exactly 2 equal columns */
-        gap: 2px 8px; /* 2px vertical gap, 8px horizontal gap */
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 4px;
         width: 100%;
-        align-items: center;
+        text-align: left;
+    }
+    .checkbox-grid-2 .checkbox-item {
+        font-size: 7.5pt; /* Slightly smaller for tight tables */
+        justify-content: flex-start;
     }
 
-    .checkbox-grid-2 .checkbox-item {
-        white-space: nowrap; /* Prevents text from wrapping to next line */
-        font-size: 8pt; /* Keeps text small for the PDF */
-        margin: 0;
+    /* Print Styles */
+    @media print {
+        .floating-save, .nav-left, .btn-save, button, .modal-overlay { display: none !important; }
+        body { background-color: white; }
+        .paper-container { margin: 0; }
+        .pdf-sheet { box-shadow: none; margin: 0; width: 100%; height: auto; }
+        .field-box { background: transparent !important; } /* Remove grey bg on print */
     }
+
+    /* ... (Keep your modal styles from before) ... */
+    .floating-save { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+    .btn-save { background: #28a745; color: white; padding: 15px 30px; border: none; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
+    .hidden { display: none !important; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+    .save-dialog { width: 650px; height: 500px; background: white; border-radius: 8px; display: flex; flex-direction: column; }
+    /* ... Add rest of modal styles here ... */
 </style>
 {% endblock %}
 
@@ -181,6 +148,7 @@
     </div>
 
     <div class="pdf-sheet">
+        <img src="{% static 'images/VADRIDA LOGO.png' %}" alt="Logo" class="header-logo">
         <h1>Valuers Checklist</h1>
         
         <div class="section-title">1. General Information</div>

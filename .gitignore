@@ -17,6 +17,8 @@ staticfiles/
 .venv/
 env/
 venv/
+.venv_linux
+generated_pdfs/
 
 # IDEs
 .vscode/

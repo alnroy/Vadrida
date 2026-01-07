@@ -30,7 +30,8 @@ import fitz
 from .utils import generate_site_report_pdf
 from django.shortcuts import render, get_object_or_404
 import shutil
-
+from urllib.parse import unquote
+from django.http import HttpResponseNotFound, HttpResponseBadRequest
 
 @csrf_protect
 def refresh_files(request):
@@ -285,38 +286,88 @@ def get_folder_contents_api(request):
 
 @require_http_methods(["GET"])
 def serve_file(request):
-    rel_path = request.GET.get("path")
-    if not rel_path:
-        raise Http404("File path not provided")
+    # 1. Get the relative path from the URL
+    raw_path = request.GET.get('path')
+    if not raw_path:
+        return HttpResponseBadRequest("Missing 'path' parameter")
+    
+    # 2. Decode URL (converts '%20' to space)
+    rel_path = unquote(raw_path)
+    
+    # 3. Construct the Full Path using DOCUMENTS_ROOT (G:\My Drive...)
+    # We use os.path.normpath to fix slashes (forward vs backward)
+    full_path = os.path.normpath(os.path.join(settings.DOCUMENTS_ROOT, rel_path))
 
-    rel_path = rel_path.replace("#", "")
-    full_path = os.path.realpath(os.path.join(DOCUMENTS_FOLDER, rel_path))
+    # 4. Debugging: Print exactly where we are looking (Check your terminal!)
+    print(f"--- SERVE FILE DEBUG ---")
+    print(f"Looking for: {rel_path}")
+    print(f"Full Path:   {full_path}")
 
-    if not full_path.startswith(os.path.realpath(DOCUMENTS_FOLDER)):
-        raise Http404("Invalid file path")
-
+    # 5. Check if file exists
     if not os.path.exists(full_path):
-        raise Http404("File not found")
+        print("ERROR: File not found on disk.")
+        return HttpResponseNotFound(f"File not found at: {full_path}")
 
-    mime_type, _ = mimetypes.guess_type(full_path)
-    mime_type = mime_type or "application/octet-stream"
+    # 6. Security Check (Prevent accessing files outside G:\My Drive)
+    # This ensures someone can't ask for "..\..\Windows\System32"
+    if not full_path.startswith(os.path.normpath(settings.DOCUMENTS_ROOT)):
+        return HttpResponseNotFound("Access Denied: Invalid file path.")
 
-    download = request.GET.get("download") == "true"
+    # 7. Serve the file
+    content_type, _ = mimetypes.guess_type(full_path)
+    if not content_type:
+        content_type = 'application/octet-stream'
 
-    response = FileResponse(
-        open(full_path, "rb"),
-        content_type=mime_type,
-        as_attachment=download,
-        filename=os.path.basename(full_path),
-    )
-
-    response["Accept-Ranges"] = "bytes"
-
-    # OPTIONAL — only if iframe embedding is required
-    response["Content-Security-Policy"] = "frame-ancestors *"
-
+    response = FileResponse(open(full_path, 'rb'), content_type=content_type)
+    
+    # Force inline for PDFs (Preview), Attachment for others if needed
+    if 'pdf' in content_type:
+        response['Content-Disposition'] = 'inline'
+        
     return response
 
+
+
+import fitz  # PyMuPDF
+from django.http import HttpResponse, HttpResponseNotFound
+from django.core.cache import cache
+
+def get_thumbnail(request):
+    # 1. Get Path
+    rel_path = request.GET.get('path')
+    if not rel_path:
+        return HttpResponseNotFound()
+    
+    # 2. Clean Path (Handle spaces/encoding)
+    rel_path = unquote(rel_path)
+    full_path = os.path.normpath(os.path.join(settings.DOCUMENTS_ROOT, rel_path))
+
+    # 3. Security & Existence Check
+    if not full_path.startswith(os.path.normpath(settings.DOCUMENTS_ROOT)):
+        return HttpResponseNotFound()
+    if not os.path.exists(full_path):
+        return HttpResponseNotFound()
+
+    # 4. Check Cache (Optional: To make it even faster on reload)
+    # cache_key = f"thumb_{rel_path}"
+    # cached_img = cache.get(cache_key)
+    # if cached_img:
+    #     return HttpResponse(cached_img, content_type="image/jpeg")
+
+    try:
+        # 5. Generate Image using PyMuPDF (Fast!)
+        doc = fitz.open(full_path)
+        page = doc.load_page(0)  # Load first page
+        pix = page.get_pixmap(matrix=fitz.Matrix(0.5, 0.5))  # 50% scale (thumbnail size)
+        img_data = pix.tobytes("jpg")  # Convert to JPG bytes
+        
+        # cache.set(cache_key, img_data, 60*60*24) # Cache for 24 hours
+        return HttpResponse(img_data, content_type="image/jpeg")
+        
+    except Exception as e:
+        print(f"Thumbnail Error: {e}")
+        # Return a 1x1 pixel empty image or 404 so browser shows default icon
+        return HttpResponseNotFound()
 
 @require_http_methods(["GET"])
 def get_file_info(request):
