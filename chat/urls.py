@@ -1,8 +1,8 @@
+# chat/urls.py
 from django.urls import path
-from .views import chat_history, upload_chat_file, unpin_message
+from . import views
 
 urlpatterns = [
-    path("history/", chat_history),
-    path("upload/", upload_chat_file),
-    path("unpin/", unpin_message),
+    path('history/', views.chat_history, name='chat_history'),
+    path('upload/', views.upload_chat_file, name='chat_upload'),
 ]

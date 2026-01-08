@@ -146,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Delhi/kerala'
 
 USE_I18N = True
 
@@ -203,11 +203,9 @@ GENERATED_PDFS_ROOT = os.path.join(BASE_DIR , "generated_pdfs")
 # Ensure directories exist
 os.makedirs(GENERATED_PDFS_ROOT, exist_ok=True)
 
-if os.name == 'posix':
-    DOCUMENTS_ROOT = "/mnt/g/My Drive/2025_2026"
-else:
-    DOCUMENTS_ROOT = r"G:\My Drive\2025_2026"
-    
+
+DOCUMENTS_ROOT = r"G:\My Drive\2025_2026"
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"

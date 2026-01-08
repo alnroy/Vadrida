@@ -16,7 +16,6 @@
   </div>
 
   <div class="dashboard-grid">
-    <!-- LEFT: file list + dropdown + file info -->
     <aside class="bg-white rounded-lg p-4 shadow-sm">
       <div class="flex items-center justify-between mb-4 flex-shrink-0">
         <h3 class="font-montserrat font-semibold">Files</h3>
@@ -72,107 +71,130 @@
           </div>
         </div>
 
-        <div id="bigViewer">
-          <div id="noSelection">
-            Select a file to preview
-          </div>
+        <div id="bigViewer" class="relative h-full flex flex-col bg-gray-100">
+  
+  <div id="noSelection" class="flex items-center justify-center h-full text-gray-400">
+    Select a file to preview
+  </div>
 
-          <div id="pdfWrapper" class="hidden">
-            <div id="pdfMain"></div>
-          </div>
+  <div id="pdfToolbar" class="hidden flex items-center justify-between px-4 py-2 bg-white border-b shadow-sm z-10">
+    <div class="text-sm font-semibold text-gray-600" id="pageCountDisplay">Page 1</div>
+    <div class="flex items-center gap-2">
+      <button id="pdfZoomOut" class="px-2 py-1 bg-gray-100 border rounded hover:bg-gray-200"><i class="fas fa-minus"></i></button>
+      <span id="zoomLevelDisplay" class="text-xs w-12 text-center">100%</span>
+      <button id="pdfZoomIn" class="px-2 py-1 bg-gray-100 border rounded hover:bg-gray-200"><i class="fas fa-plus"></i></button>
+    </div>
+  </div>
 
-          <img id="bigImageFrame" class="hidden" src="" alt="preview" />
-        </div>
+  <div id="scrollContainer" class="hidden flex-1 overflow-y-auto p-4 flex flex-col items-center gap-4">
+     <div id="scrollSentinel" class="w-full h-20 flex items-center justify-center text-gray-400">
+        <div class="spinner border-4 border-gray-300 border-t-blue-500 rounded-full w-6 h-6 animate-spin"></div>
+     </div>
+  </div>
+
+</div>
       </div>
     </section>
 
     <!-- RIGHT: WhatsApp-Style Chat -->
     <aside class="bg-white rounded-lg p-4 shadow-sm">
-      <div id="pinnedMessages" class="mb-3 space-y-2"></div>
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-3 flex-shrink-0">
-        <h3 class="font-montserrat font-semibold">Chat</h3>
-        <div class="text-sm text-gray-500">Agent</div>
+  
+  <div class="flex items-center justify-between p-3 border-b bg-white" style="flex-shrink: 0;">
+    <h3 class="font-montserrat font-semibold text-lg">Team Chat</h3>
+    
+  </div>
+
+  <div id="pinnedMessages" class="px-3 pt-2 space-y-2" style="flex-shrink: 0;"></div>
+
+  <div 
+    id="chatBox" 
+    class="bg-gray-50"
+    style="flex: 1; overflow-y: auto; min-height: 0; padding: 10px; display: flex; flex-direction: column;"
+  >
       </div>
 
-      <!-- Chat Area -->
-      <div id="chatBox" class="chat-box bg-gray-50 rounded p-3 mb-3 flex-1 overflow-y-auto space-y-4">
-        <!-- Example Messages -->
-        <div class="flex flex-col">
-          <span class="text-xs text-gray-500 mb-1">Agent</span>
-          <div class="bg-white p-3 rounded-xl shadow-sm max-w-[75%]">
-            Hi! Ready to help you with document analysis.
-          </div>
-        </div>
-      </div>
+  <form 
+    id="chatForm" 
+    style="flex-shrink: 0; padding: 10px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; background: white;"
+  >
+    
+    <label class="cursor-pointer p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-blue-600 transition" style="flex-shrink: 0;">
+      <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.doc,.docx" />
+      <i class="fas fa-paperclip text-lg"></i>
+    </label>
 
-      <!-- Typing Box -->
-      <form id="chatForm" class="flex items-center gap-2 flex-shrink-0">
-        <!-- File Upload -->
-        <label class="cursor-pointer">
-          <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.doc,.docx" />
-          <i class="fas fa-paperclip text-royal-blue-700 text-xl"></i>
-        </label>
+    <input
+      id="chatInput"
+      type="text"
+      placeholder="Type a message..."
+      class="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      style="flex: 1; min-width: 0;"
+      autocomplete="off"
+    />
 
-        <!-- Text Input -->
-        <input
-          id="chatInput"
-          type="text"
-          placeholder="Type a message..."
-          class="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-royal-blue-500 text-sm"
-        />
-
-        <!-- Send Button -->
-        <button type="submit" class="bg-royal-blue-600 text-white px-4 py-2 rounded-full">
-          <i class="fas fa-paper-plane"></i>
-        </button>
-      </form>
-    </aside>
+    <button 
+      type="submit" 
+      class="bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-sm transition"
+      style="flex-shrink: 0; width: 40px; height: 40px; border: none; cursor: pointer;"
+    >
+      <i class="fas fa-paper-plane text-sm ml-[-2px]"></i>
+    </button>
+  </form>
+</aside>
   </div>
 </div>
 
 <!-- Fullscreen modal for preview -->
 <div id="fullscreenModal" aria-hidden="true">
   <div class="modal-box">
-    <div class="flex items-center justify-between p-3 border-b bg-white">
-      <div class="font-semibold" id="modalTitle">Preview</div>
+    
+    <div class="flex items-center justify-between p-3 border-b bg-white z-50 relative">
+      <div class="font-semibold truncate max-w-[200px]" id="modalTitle">Preview</div>
 
-      <div class="flex items-center gap-3 flex-wrap">
-        <div id="shareButtonsContainer" class="flex space-x-2 hidden">
-          <a href="#" id="shareWhatsapp" class="px-3 py-2 rounded border text-sm share-btn">
-            <i class="fab fa-whatsapp mr-2"></i>WhatsApp
-          </a>
-          <a href="#" id="shareTelegram" class="px-3 py-2 rounded border text-sm share-btn">
-            <i class="fab fa-telegram mr-2"></i>Telegram
-          </a>
-          <a href="#" id="shareEmail" class="px-3 py-2 rounded border text-sm share-btn">
-            <i class="fas fa-envelope mr-2"></i>Email
-          </a>
-          <a href="#" id="shareCopy" class="px-3 py-2 rounded border text-sm share-btn">
-            <i class="fas fa-link mr-2"></i>Copy Link
-          </a>
+      <div>
+        <button id="modalZoomOut">
+         
+        </button>
+        
+        <button id="modalZoomIn">
+         
+        </button>
+        <button id="modalZoomReset">
+          
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        
+        <div id="shareButtonsContainer" class="flex space-x-2 hidden absolute top-14 right-4 bg-white shadow-xl p-2 rounded-lg border z-50">
+          <a href="#" id="shareWhatsapp" class="p-2 hover:bg-green-50 rounded text-green-600"><i class="fab fa-whatsapp text-xl"></i></a>
+          <a href="#" id="shareTelegram" class="p-2 hover:bg-blue-50 rounded text-blue-500"><i class="fab fa-telegram text-xl"></i></a>
+          <a href="#" id="shareEmail" class="p-2 hover:bg-gray-50 rounded text-gray-600"><i class="fas fa-envelope text-xl"></i></a>
+          <a href="#" id="shareCopy" class="p-2 hover:bg-gray-50 rounded text-gray-600"><i class="fas fa-link text-xl"></i></a>
         </div>
 
-        <!-- Main Share button to toggle these -->
-        <a id="modalShare" href="#" class="px-3 py-2 rounded border text-sm share-btn">
-          <i class="fas fa-share-alt mr-2"></i>Share
-        </a>
-
-        <!-- Download button -->
-        <button id="modalDownloadBtn" class="px-3 py-2 rounded border text-sm download-btn">
-          <i class="fas fa-file-download mr-2"></i>Download
+        <button id="modalShare" class="px-3 py-2 rounded border text-sm hover:bg-gray-50 transition">
+          <i class="fas fa-share-alt"></i> <span class="hidden sm:inline">Share</span>
         </button>
 
-        <button id="modalClose" class="px-3 py-2 border rounded text-sm">Close</button>
+        <button id="modalDownloadBtn" class="px-3 py-2 rounded border text-sm hover:bg-gray-50 transition">
+          <i class="fas fa-file-download"></i> <span class="hidden sm:inline">Download</span>
+        </button>
+
+        <button id="modalClose" class="px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded text-sm hover:bg-red-100 transition">Close</button>
       </div>
     </div>
 
-    <div id="modalBody" class="modal-inner" style="overflow: hidden; display: flex; justify-content: center; background: #f0f0f0; height: calc(100% - 60px);">
-      <iframe id="modalFrame" class="hidden" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+    <div id="modalBody" class="modal-inner relative bg-gray-100 flex items-center justify-center overflow-hidden" style="height: calc(100% - 60px);">
       
-      <img id="modalImage" class="hidden" src="" alt="preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+      <iframe id="modalFrame" class="hidden w-full h-full border-none"></iframe>
       
-      <div id="modalPdfContainer" class="hidden pdf-scroll-container" style="width: 100%; height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center;"></div>
+      <div id="imageZoomWrapper" class="hidden w-full h-full overflow-auto flex items-center justify-center">
+         <img id="modalImage" class="transition-transform duration-200 origin-center" src="" alt="preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+      </div>
+      
+      <div id="modalPdfContainer" class="hidden w-full h-full overflow-y-auto flex flex-col items-center bg-gray-200 pt-4 pb-10"></div>
+    
     </div>
   </div>
 </div>
@@ -634,57 +656,6 @@ searchInput.addEventListener("input", e => {
 });
 
 /* =========================
-   RENDER FULL PDF
-========================= */
-/* =========================
-   RENDER FULL PDF (Updated for Modal Support)
-========================= */
-async function renderFullPdf(url, targetContainer = null) {
-  try {
-    await loadPdfJsIfNeeded();
-
-    // Default to sidebar (pdfMain) if no specific container is passed
-    const container = targetContainer || document.getElementById("pdfMain");
-    
-    // Show loading state
-    container.innerHTML = '<div style="color:gray; text-align:center; padding:20px;">Loading PDF...</div>';
-
-    const pdf = await pdfjsLib.getDocument(url).promise;
-    container.innerHTML = ""; // Clear loader
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      
-      // Determine Zoom Level
-      // If in Modal (targetContainer exists), make it bigger (1.5). 
-      // If in Sidebar (no targetContainer), keep it smaller.
-      const baseScale = targetContainer ? 1.5 : (window.innerWidth < 768 ? 1.0 : 1.4);
-      
-      const viewport = page.getViewport({ scale: baseScale });
-
-      const cvs = document.createElement("canvas");
-      cvs.width = viewport.width;
-      cvs.height = viewport.height;
-      cvs.style.marginBottom = "10px";
-      cvs.style.display = "block";
-      cvs.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)"; // Nice shadow
-      cvs.style.backgroundColor = "white";
-
-      // Render
-      await page.render({ 
-          canvasContext: cvs.getContext("2d"), 
-          viewport: viewport 
-      }).promise;
-
-      container.appendChild(cvs);
-    }
-  } catch (error) {
-    console.error("PDF Render Error:", error);
-    const container = targetContainer || document.getElementById("pdfMain");
-    container.innerHTML = `<div class="p-4 text-red-500 text-center">Error loading PDF content</div>`;
-  }
-}
-/* =========================
    PDF.JS LOADER
 ========================= */
 function loadPdfJsIfNeeded() {
@@ -736,66 +707,6 @@ document.getElementById("refreshFolders").onclick = () => {
     });
 };
 
-/* =========================
-   FULLSCREEN MODAL LOGIC (Updated)
-========================= */
-const fullscreenModal = document.getElementById("fullscreenModal");
-const modalFrame = document.getElementById("modalFrame");
-const modalImage = document.getElementById("modalImage");
-
-document.getElementById("openFullBtn").onclick = () => {
-  if (!currentFile || !currentPreviewUrl) {
-    alert("Select a file first");
-    return;
-  }
-
-  // 1. Open Modal (Active on ALL devices now)
-  fullscreenModal.classList.add("active"); // Ensure your CSS supports .active for display block
-
-  // If your CSS uses Aria-Hidden instead of a class for visibility:
-  fullscreenModal.setAttribute("aria-hidden", "false"); 
-
-  // 2. Reset All Containers
-  modalFrame.classList.add("hidden");
-  modalImage.classList.add("hidden");
-  const pdfContainer = document.getElementById("modalPdfContainer");
-  pdfContainer.classList.add("hidden");
-  pdfContainer.innerHTML = ""; // Clear previous
-
-  const ext = currentFile.name.split(".").pop().toLowerCase();
-
-  // 3. Route based on file type
-  if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-    // === IMAGE ===
-    modalImage.src = currentPreviewUrl;
-    modalImage.classList.remove("hidden");
-  } 
-  else if (ext === 'pdf') {
-    // === PDF (Direct Render) ===
-    pdfContainer.classList.remove("hidden");
-    renderFullPdf(currentPreviewUrl, pdfContainer);
-  } 
-  else {
-    // === UNSUPPORTED (Docx, Excel, etc.) ===
-    // Show clean "No Preview" UI instead of broken iframe
-    pdfContainer.classList.remove("hidden");
-    pdfContainer.innerHTML = `
-        <div style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">
-            <div style="font-size: 60px; color: #cbd5e1; margin-bottom: 20px;">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <h3 style="font-size: 20px; color: #334155; margin: 0; font-weight: 600;">No Preview Available</h3>
-            <p style="color: #64748b; margin-top: 10px;">
-                .${ext.toUpperCase()} files cannot be previewed in the browser.
-            </p>
-            <a href="${currentPreviewUrl}&download=true" 
-               style="background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
-               <i class="fas fa-download"></i> Download File
-            </a>
-        </div>
-    `;
-  }
-};
 
 document.getElementById("modalClose").onclick = () => {
   // Close logic supporting both class and aria attribute
@@ -807,26 +718,7 @@ document.getElementById("modalClose").onclick = () => {
   document.getElementById("modalPdfContainer").innerHTML = "";
 };
 
-/* =========================
-   SHARE & DOWNLOAD
-========================= */
-const modalShareBtn = document.getElementById("modalShare");
-const shareButtonsContainer = document.getElementById("shareButtonsContainer");
 
-modalShareBtn.onclick = async (e) => {
-  e.preventDefault();
-
-  if (navigator.share && currentPreviewUrl) {
-    try {
-      await navigator.share({
-        title: "Document",
-        url: window.location.origin + currentPreviewUrl
-      });
-    } catch (_) {}
-  } else {
-    shareButtonsContainer.classList.toggle("hidden");
-  }
-};
 
 function updateShareLinks(url) {
   const encoded = encodeURIComponent(window.location.origin + url);
@@ -842,17 +734,6 @@ function updateShareLinks(url) {
   };
 }
 
-const modalDownloadBtn = document.getElementById("modalDownloadBtn");
-
-modalDownloadBtn.onclick = () => {
-  if (!currentFile) {
-    alert("No file selected");
-    return;
-  }
-
-  const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
-  window.location.href = downloadUrl;
-};
 
 /* =========================
    INIT
@@ -868,8 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
 /* =========================
    CHAT STATE
 ========================= */
-
-const CURRENT_USERNAME = "{{ request.user_profile.user_name }}";
+const CURRENT_USERNAME = "{{ request.user_profile.user_name|default:request.session.user_name }}";
 const chatBox = document.getElementById("chatBox");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
@@ -934,39 +814,65 @@ chatForm.onsubmit = e => {
 ========================= */
 
 function renderMessage(msg) {
-  const mine = msg.user === CURRENT_USERNAME;
+    // DEBUG: Check why names aren't matching
+    // Remove this console.log after it works
+    console.log(`Checking: '${msg.user}' vs '${CURRENT_USERNAME}'`);
 
-  const div = document.createElement("div");
-  div.className = `flex ${mine ? "justify-end" : "justify-start"}`;
+    // 1. ROBUST COMPARISON (Ignore Case & Spaces)
+    const sender = String(msg.user).trim().toLowerCase();
+    const me = String(CURRENT_USERNAME).trim().toLowerCase();
+    const isMe = (sender === me);
+    
+    // 2. CONTAINER DIV (Flex Alignment)
+    const div = document.createElement("div");
+    // 'w-full' ensures it spans across. 'flex' allows alignment.
+    div.className = "w-full mb-2 flex"; 
+    div.style.justifyContent = isMe ? "flex-end" : "flex-start";
 
-  let contentHtml = "";
+    // 3. COLORS & STYLING
+    // Green (#dcf8c6) for Me, White (#fff) for Others
+    const bgStyle = isMe 
+        ? "background-color: #dcf8c6; border-top-right-radius: 0;" 
+        : "background-color: #ffffff; border-top-left-radius: 0;";
 
-  if (msg.attached_type === "file") {
-    contentHtml += `
-      <div class="flex items-center gap-2 cursor-pointer underline"
-           onclick='openPinnedReference(${JSON.stringify(msg).replace(/'/g, "&apos;")})'>
-        📎 ${msg.attached_label}
-      </div>
+    // 4. ATTACHMENT
+    let attachHtml = "";
+    if (msg.attached_type !== "none" && msg.attached_path) {
+        let icon = "fa-file-alt";
+        if (msg.attached_path.endsWith(".pdf")) icon = "fa-file-pdf text-red-500";
+        else if (msg.attached_path.match(/\.(jpg|jpeg|png|gif)$/i)) icon = "fa-file-image text-blue-500";
+
+        attachHtml = `
+            <div class="mt-1 mb-1 p-2 bg-black/5 rounded border border-black/10 cursor-pointer flex items-center gap-2 hover:bg-black/10 transition"
+                 onclick="handleChatAttachmentClick('${msg.attached_path}', '${msg.attached_label}')">
+                <i class="fas ${icon}"></i>
+                <span class="text-xs font-medium truncate max-w-[150px] underline">${msg.attached_label}</span>
+            </div>
+        `;
+    }
+
+    // 5. NAME LABEL (Only show for others)
+    const userLabel = !isMe 
+        ? `<div class="text-[10px] font-bold text-orange-600 mb-1 uppercase tracking-wide">${msg.user}</div>` 
+        : "";
+    
+    const checkmark = isMe ? '<i class="fas fa-check-double text-blue-500 ml-1 text-[10px]"></i>' : '';
+
+    // 6. INJECT HTML (Using Inline Styles to guarantee layout)
+    div.innerHTML = `
+        <div style="${bgStyle} max-width: 85%; padding: 8px 12px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); position: relative; min-width: 100px;">
+            ${userLabel}
+            ${attachHtml}
+            <div class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words">${msg.content}</div>
+            <div class="text-[9px] text-gray-500 text-right mt-1 flex justify-end items-center gap-1">
+                ${msg.time} ${checkmark}
+            </div>
+        </div>
     `;
-  }
 
-  if (msg.content) {
-    contentHtml += `<div>${msg.content}</div>`;
-  }
-
-  div.innerHTML = `
-    <div class="${mine ? "bg-blue-600 text-white" : "bg-white"}
-                p-3 rounded-xl max-w-[75%] shadow-sm">
-      ${!mine ? `<div class="text-xs font-semibold mb-1">${msg.user}</div>` : ""}
-      ${contentHtml}
-      <div class="text-[10px] text-right opacity-70">${msg.time}</div>
-    </div>
-  `;
-
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
-
 /* =========================
    PIN RENDERING (HISTORY ONLY)
 ========================= */
@@ -1037,6 +943,505 @@ function waitForFileAndPreview(path, tries = 10) {
 <script>
 document.getElementById("siteFeedbackBtn").onclick = () => {
   window.location.href = "feedback/";
+};
+
+/* ==========================================
+   SERVER-SIDE INFINITE SCROLL PDF VIEWER
+   ========================================== */
+
+// State
+let viewerState = {
+    path: null,
+    nextPageToLoad: 0,
+    zoom: 1.0,
+    isLoading: false,
+    isFinished: false // True when we hit the last page
+};
+
+// Elements
+const scrollContainer = document.getElementById("scrollContainer");
+const scrollSentinel = document.getElementById("scrollSentinel"); // The loading spinner at bottom
+const pdfToolbar = document.getElementById("pdfToolbar");
+const pageCountDisplay = document.getElementById("pageCountDisplay");
+const zoomLevelDisplay = document.getElementById("zoomLevelDisplay");
+
+// --- 1. INITIALIZE PREVIEW ---
+function loadBigPreview(file) {
+    currentFile = file;
+    
+    // Reset State
+    viewerState.path = file.path;
+    viewerState.nextPageToLoad = 0;
+    viewerState.isLoading = false;
+    viewerState.isFinished = false;
+
+    // Reset UI
+    document.getElementById("bigPreviewTitle").textContent = file.name;
+    document.getElementById("noSelection").classList.add("hidden");
+    document.getElementById("downloadPdfBtn").classList.remove("hidden");
+    
+    // Clear previous pages (Keep only the sentinel)
+    // We remove all img elements before the sentinel
+    const existingImages = scrollContainer.querySelectorAll('img.pdf-page-img');
+    existingImages.forEach(img => img.remove());
+
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    // CASE A: PDF (Vertical Scroll)
+    if (ext === "pdf") {
+        scrollContainer.classList.remove("hidden");
+        pdfToolbar.classList.remove("hidden");
+        scrollSentinel.classList.remove("hidden"); // Show spinner
+        
+        // Start observing for scroll
+        observer.observe(scrollSentinel);
+        
+        // Load Page 0 immediately
+        loadNextPage();
+    } 
+    // CASE B: Image
+    else if (["jpg", "jpeg", "png", "gif"].includes(ext)) {
+        scrollContainer.classList.remove("hidden");
+        pdfToolbar.classList.add("hidden");
+        scrollSentinel.classList.add("hidden"); // No infinite scroll for single images
+        
+        const img = createPageImage(0, true); // True = is single image
+        img.src = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+        scrollContainer.insertBefore(img, scrollSentinel);
+    }
+    else {
+        scrollContainer.classList.add("hidden");
+        document.getElementById("noSelection").classList.remove("hidden");
+        document.getElementById("noSelection").textContent = "Preview not available.";
+    }
+}
+
+// --- 2. LOAD NEXT PAGE LOGIC ---
+function loadNextPage() {
+    if (viewerState.isLoading || viewerState.isFinished) return;
+    
+    viewerState.isLoading = true;
+
+    // specific page index to load
+    const pageIndex = viewerState.nextPageToLoad;
+    
+    // Create the image element placeholder
+    const img = createPageImage(pageIndex);
+    
+    // Construct Backend URL
+    // Note: We use the 'render-page' view we created earlier
+    const url = `/coreapi/render-page/?path=${encodeURIComponent(viewerState.path)}&page=${pageIndex}&zoom=${viewerState.zoom}`;
+
+    img.onload = () => {
+        viewerState.isLoading = false;
+        viewerState.nextPageToLoad++; // Prepare for next page
+        
+        // Update "Page X" display based on what is currently loaded
+        pageCountDisplay.textContent = `Pages loaded: ${viewerState.nextPageToLoad}`;
+        
+        // If the Sentinel is still visible (big screen, small PDF), load another one immediately
+        // This prevents getting stuck with only 1 page on a large monitor
+        if (isSentinelVisible()) {
+            loadNextPage();
+        }
+    };
+
+    img.onerror = () => {
+        // ERROR usually means 404 Not Found -> End of Document
+        console.log("End of document reached or error.");
+        viewerState.isFinished = true;
+        viewerState.isLoading = false;
+        img.remove(); // Remove the broken image
+        scrollSentinel.classList.add("hidden"); // Hide the spinner
+        observer.unobserve(scrollSentinel); // Stop watching
+    };
+
+    img.src = url;
+    
+    // Insert before the spinner
+    scrollContainer.insertBefore(img, scrollSentinel);
+}
+
+// --- 3. HELPER: CREATE IMAGE ELEMENT ---
+function createPageImage(index, isSingle = false) {
+    const img = document.createElement("img");
+    img.className = "pdf-page-img shadow-lg bg-white mb-4 transition-transform duration-200";
+    img.alt = `Page ${index + 1}`;
+    img.dataset.page = index;
+    
+    // Styles for nice paper look
+    img.style.minHeight = isSingle ? "auto" : "800px"; // Placeholder height prevents jumpiness
+    img.style.minWidth = "600px";
+    img.style.maxWidth = "100%";
+    
+    if (isSingle) img.style.minHeight = "auto";
+
+    return img;
+}
+
+// --- 4. INTERSECTION OBSERVER (Auto-Scroll) ---
+// This watches the "spinner" at the bottom. When it appears on screen, it triggers loadNextPage()
+const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+        loadNextPage();
+    }
+}, { root: scrollContainer, threshold: 0.1 });
+
+function isSentinelVisible() {
+    const rect = scrollSentinel.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    return (rect.top <= containerRect.bottom);
+}
+
+// --- 5. ZOOM CONTROLS ---
+// Since we have many images, we update CSS transform for all of them
+function updateZoom() {
+    const images = document.querySelectorAll('.pdf-page-img');
+    images.forEach(img => {
+        // We use CSS width % to handle zoom cleanly in a flex column
+        // Base is 100% (fit width). 
+        // Note: Real PDF viewers re-render at higher resolution on zoom. 
+        // For simple CSS zoom:
+        img.style.width = `${100 * viewerState.zoom}%`;
+        img.style.maxWidth = "none"; // Allow it to overflow container if zoomed in
+    });
+    
+    // Also re-render future pages at higher quality? 
+    // For now, let's stick to CSS scaling for instant feedback.
+    // If you want higher quality, we'd need to clear list and re-fetch with &zoom=X parameter.
+    
+    zoomLevelDisplay.textContent = `${Math.round(viewerState.zoom * 100)}%`;
+}
+
+document.getElementById("pdfZoomIn").onclick = () => {
+    if (viewerState.zoom < 2.0) {
+        viewerState.zoom += 0.25;
+        updateZoom();
+    }
+};
+
+document.getElementById("pdfZoomOut").onclick = () => {
+    if (viewerState.zoom > 0.5) {
+        viewerState.zoom -= 0.25;
+        updateZoom();
+    }
+};
+
+
+/* ==========================================
+   UPDATED: FULLSCREEN MODAL WITH ZOOM
+   ========================================== */
+
+// 1. Get Modal Elements (Using UNIQUE IDs)
+const fullscreenModal = document.getElementById("fullscreenModal");
+const modalFrame = document.getElementById("modalFrame");
+const modalImage = document.getElementById("modalImage");
+const imageZoomWrapper = document.getElementById("imageZoomWrapper"); 
+const modalPdfContainer = document.getElementById("modalPdfContainer");
+const modalTitle = document.getElementById("modalTitle");
+
+// 2. ZOOM CONTROLS (Renamed to avoid conflict with Dashboard)
+const modalZoomDisplay = document.getElementById("modalZoomLevel"); // New ID
+let currentModalZoom = 1.0; // Separate state for Modal
+
+// 3. State
+let modalState = {
+    path: null,
+    nextPage: 0,
+    isLoading: false,
+    isFinished: false,
+    observer: null,
+    mode: 'none'
+};
+
+/* --- OPEN MODAL BUTTON --- */
+document.getElementById("openFullBtn").onclick = () => {
+    if (!currentFile) return alert("Select a file first");
+
+    // Show Modal
+    fullscreenModal.classList.add("active");
+    fullscreenModal.setAttribute("aria-hidden", "false");
+    modalTitle.textContent = currentFile.name;
+
+    // Reset Elements
+    modalFrame.classList.add("hidden");
+    imageZoomWrapper.classList.add("hidden");
+    modalPdfContainer.classList.add("hidden");
+    modalPdfContainer.innerHTML = "";
+    
+    // Reset Zoom State
+    currentModalZoom = 1.0;
+    updateModalZoomUI();
+
+    modalState.path = currentFile.path;
+    const ext = currentFile.name.split(".").pop().toLowerCase();
+
+    // CASE A: PDF
+    if (ext === 'pdf') {
+        modalState.mode = 'pdf';
+        modalPdfContainer.classList.remove("hidden");
+        initPdfModal();
+    } 
+    // CASE B: IMAGE
+    else if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+        modalState.mode = 'image';
+        imageZoomWrapper.classList.remove("hidden");
+        modalImage.classList.remove("hidden");
+        
+        // Load High-Res
+        modalImage.src = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}`;
+        
+        // Reset Style
+        modalImage.style.transform = "scale(1)";
+        modalImage.style.maxWidth = "100%";
+        modalImage.style.maxHeight = "100%";
+        modalImage.style.margin = "0";
+    }
+    // CASE C: OTHER
+    else {
+        // Fallback for non-previewable files
+        modalPdfContainer.classList.remove("hidden");
+        modalPdfContainer.innerHTML = `<div class="flex items-center justify-center h-full text-gray-500">Preview not available</div>`;
+    }
+};
+
+/* --- ZOOM LOGIC --- */
+function applyModalZoom() {
+    updateModalZoomUI();
+
+    if (modalState.mode === 'image') {
+        // IMAGE ZOOM
+        if (currentModalZoom > 1.0) {
+            modalImage.style.maxWidth = "none";
+            modalImage.style.maxHeight = "none";
+            modalImage.style.transform = `scale(${currentModalZoom})`;
+            modalImage.style.margin = "50px"; 
+        } else {
+            modalImage.style.maxWidth = "100%";
+            modalImage.style.maxHeight = "100%";
+            modalImage.style.transform = "scale(1)";
+            modalImage.style.margin = "0";
+        }
+    } 
+    else if (modalState.mode === 'pdf') {
+        // PDF ZOOM (Resize widths)
+        const widthPercent = Math.round(currentModalZoom * 80); 
+        const pages = modalPdfContainer.querySelectorAll("img");
+        pages.forEach(p => {
+            p.style.width = `${widthPercent}%`;
+            p.style.maxWidth = "none";
+        });
+    }
+}
+
+function updateModalZoomUI() {
+    const percent = Math.round(currentModalZoom * 100);
+    // Use the NEW variable
+    if(modalZoomDisplay) {
+        modalZoomDisplay.textContent = percent === 100 ? "Fit" : `${percent}%`;
+    }
+}
+
+// Button Listeners (Make sure IDs match your HTML)
+document.getElementById("modalZoomIn").onclick = () => {
+    if (currentModalZoom < 3.0) {
+        currentModalZoom += 0.25;
+        applyModalZoom();
+    }
+};
+
+document.getElementById("modalZoomOut").onclick = () => {
+    if (currentModalZoom > 0.5) {
+        currentModalZoom -= 0.25;
+        applyModalZoom();
+    }
+};
+
+document.getElementById("modalZoomReset").onclick = () => {
+    currentModalZoom = 1.0;
+    applyModalZoom();
+};
+
+/* --- PDF INFINITE SCROLL --- */
+function initPdfModal() {
+    modalState.nextPage = 0;
+    modalState.isLoading = false;
+    modalState.isFinished = false;
+
+    // Spinner
+    const sentinel = document.createElement("div");
+    sentinel.className = "w-full h-24 flex items-center justify-center py-4";
+    sentinel.innerHTML = '<div class="spinner"></div>';
+    modalPdfContainer.appendChild(sentinel);
+
+    if (modalState.observer) modalState.observer.disconnect();
+    
+    modalState.observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) loadNextModalPage(sentinel);
+    }, { root: modalPdfContainer, threshold: 0.1 });
+    
+    modalState.observer.observe(sentinel);
+    loadNextModalPage(sentinel);
+}
+
+function loadNextModalPage(sentinel) {
+    if (modalState.isLoading || modalState.isFinished) return;
+    modalState.isLoading = true;
+
+    const img = document.createElement("img");
+    const widthPercent = Math.round(currentModalZoom * 80); 
+    img.style.width = `${widthPercent}%`;
+    img.style.maxWidth = "none";
+    img.style.marginBottom = "20px";
+    img.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    img.style.minHeight = "600px"; 
+
+    img.src = `/coreapi/render-page/?path=${encodeURIComponent(modalState.path)}&page=${modalState.nextPage}&zoom=1.5`;
+
+    img.onload = () => {
+        modalState.isLoading = false;
+        modalState.nextPage++;
+        if(sentinel.parentElement && sentinel.getBoundingClientRect().top < window.innerHeight) {
+             loadNextModalPage(sentinel);
+        }
+    };
+    img.onerror = () => {
+        modalState.isFinished = true;
+        if(sentinel.parentElement) sentinel.remove();
+        modalState.observer.disconnect();
+    };
+
+    modalPdfContainer.insertBefore(img, sentinel);
+}
+
+/* --- CLOSE BUTTON --- */
+document.getElementById("modalClose").onclick = () => {
+    fullscreenModal.classList.remove("active");
+    fullscreenModal.setAttribute("aria-hidden", "true");
+    
+    // Cleanup
+    modalImage.src = "";
+    modalPdfContainer.innerHTML = "";
+    if (modalState.observer) modalState.observer.disconnect();
+};
+/* ==========================================
+   UPDATED: DOWNLOAD BUTTONS
+   ========================================== */
+
+// 1. Dashboard Download Button (Small icon in header)
+document.getElementById("downloadPdfBtn").onclick = (e) => {
+    e.stopPropagation(); // Prevent glitches
+    triggerDownload();
+};
+
+// 2. Modal Download Button (Big button in modal)
+document.getElementById("modalDownloadBtn").onclick = () => {
+    triggerDownload();
+};
+
+// Shared Download Function
+function triggerDownload() {
+    if (!currentFile) {
+        alert("No file selected.");
+        return;
+    }
+    // Points to the standard serve-file view with download=true
+    const url = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+    window.location.href = url;
+}
+
+
+/* =========================
+   ADVANCED FILE SHARING (Sends Actual File)
+========================= */
+
+// 1. Get Elements
+const modalShareBtn = document.getElementById("modalShare");
+const shareButtonsContainer = document.getElementById("shareButtonsContainer");
+const modalDownloadBtn = document.getElementById("modalDownloadBtn");
+
+// 2. Main Share Button Logic
+modalShareBtn.onclick = async (e) => {
+  e.preventDefault();
+  
+  if (!currentFile) return alert("No file selected");
+
+  const originalText = modalShareBtn.innerHTML;
+  
+  // Visual Feedback: Show user we are preparing the file
+  modalShareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+  modalShareBtn.style.pointerEvents = "none"; // Prevent double click
+
+  try {
+      // A. Construct the Download URL
+      const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+
+      // B. Fetch the file data (Blob) from your server
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+
+      // C. Create a Virtual File object
+      // We use the correct MIME type (pdf, jpg, etc.)
+      const fileObj = new File([blob], currentFile.name, { type: blob.type });
+
+      // D. Check if the Device supports File Sharing
+      if (navigator.canShare && navigator.canShare({ files: [fileObj] })) {
+          
+          // --- SUCCESS: Share the Actual File ---
+          await navigator.share({
+              files: [fileObj],
+              title: currentFile.name,
+              text: 'Here is the file.'
+          });
+          
+      } else {
+          // --- FALLBACK: Device doesn't support file sharing (e.g. Desktop) ---
+          // We revert to the Link menu, but we tell the user why
+          shareButtonsContainer.classList.toggle("hidden");
+          
+          // Still update links just in case they want to send the link instead
+          const fileLink = window.location.origin + `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}`;
+          updateShareLinks(fileLink);
+      }
+
+  } catch (err) {
+      console.log('Share failed or canceled:', err);
+      // If user canceled share, do nothing. If error, maybe show alert.
+      if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+          alert("Could not share file directly. Try downloading it first.");
+      }
+  } finally {
+      // Reset Button
+      modalShareBtn.innerHTML = originalText;
+      modalShareBtn.style.pointerEvents = "auto";
+  }
+};
+
+// 3. Fallback Links (Only used if File Sharing fails/Desktop)
+function updateShareLinks(url) {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedText = encodeURIComponent("Check this document: " + currentFile.name);
+
+  // Note: These CANNOT attach files. This is a browser limitation.
+  document.getElementById("shareWhatsapp").href = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+  document.getElementById("shareTelegram").href = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+  document.getElementById("shareEmail").href = `mailto:?subject=${encodeURIComponent(currentFile.name)}&body=${encodedText}%20${encodedUrl}`;
+
+  document.getElementById("shareCopy").onclick = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(url).then(() => {
+        alert("Link copied to clipboard!");
+        shareButtonsContainer.classList.add("hidden");
+    });
+  };
+}
+
+// 4. Download Button Logic
+modalDownloadBtn.onclick = (e) => {
+  e.preventDefault();
+  if (!currentFile) return alert("No file selected");
+  const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+  window.location.href = downloadUrl;
 };
 </script>
 

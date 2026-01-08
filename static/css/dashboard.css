@@ -1,589 +1,365 @@
-/* ========================= BASE STYLES ========================= */
+/* ==========================================================================
+   1. BASE STYLES & RESETS
+   ========================================================================== */
 html, body {
     width: 100%;
-    min-height: 100%;
-    overflow-x: hidden;
+    height: 100%; /* Force full height */
     margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scrollbar */
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f1f5f9; /* Light background for contrast */
 }
 
 * {
     box-sizing: border-box;
 }
 
+/* Base flex container for sections to prevent collapsing */
 section {
     display: flex;
     flex-direction: column;
     min-height: 0;
 }
 
-/* ========================= PREVIEW CONTAINER - CRITICAL FIX ========================= */
-#bigViewer {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    background: #f8fafc;
-    overflow: hidden;
+/* ==========================================================================
+   2. DASHBOARD GRID SYSTEM (The Core Layout)
+   ========================================================================== */
+.dashboard-grid {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    max-width: 100vw;
+    padding: 12px;
+    /* Default to Mobile: Single Column */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto; 
 }
 
-/* ========================= PDF.js CANVAS SUPPORT ========================= */
-#bigImageFrame {
-    width: 100%;
-    height: 100%;
+/* Ensure panels handle internal scrolling */
+.dashboard-grid > aside,
+.dashboard-grid > section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Critical for internal scrolls */
+}
+
+/* ==========================================================================
+   3. COMPONENT STYLES
+   ========================================================================== */
+
+/* --- THUMBNAILS --- */
+#thumbs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    flex-shrink: 0;
+    max-height: 160px;
+}
+.thumb-item {
+    width: 120px;
+    height: 120px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.thumb-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.thumb-item img, .thumb-item canvas {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
 }
 
-#bigImageFrame.hidden {
-    display: none !important;
-}
-
-#noSelection {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: #94a3b8;
-}
-
-.thumb-item {
-    height: 140px;
-    width: 140px;
-    background: white;
+/* --- PREVIEWER (PDF/Image) --- */
+.preview-shell {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Magic fix for flex scroll */
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
 }
 
-.thumb-item canvas {
-    max-width: 100%;
-    height: auto;
-}
-
-.thumb-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-}
-
-.file-info, .file-list-scroll {
-    max-height: calc(100vh - 220px);
-    overflow-y: auto;
-    padding: 10px;
-}
-
-.analyse-btn {
-    background: linear-gradient(90deg,#0066ff,#3385ff);
-    color: white;
-    transition: opacity 0.2s;
-    border: none;
-    cursor: pointer;
-}
-
-.analyse-btn:hover {
-    opacity: 0.9;
-}
-
-.spinner {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    border: 8px solid rgba(255,255,255,0.15);
-    border-top-color: white;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin { 
-    to { transform: rotate(360deg); } 
-}
-
-.dropdown-file {
-    appearance: none;
-    -webkit-appearance: none;
-    background: white url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='none' stroke='gray' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
-    padding-right: 36px;
-}
-
-.download-btn { 
-    min-width: 90px; 
-    transition: background 0.2s;
-}
-
-/* ========================= DASHBOARD GRID - BASE ========================= */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    width: 100%;
-    max-width: 100vw;
-}
-
-.dashboard-grid > aside,
-.dashboard-grid > section {
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    max-width: 100%;
-}
-
-.preview-shell {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-#bigPreviewHeader {
-    flex-shrink: 0;
-}
-
-/* ========================= FULLSCREEN MODAL ========================= */
-#fullscreenModal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 0;
-    margin: 0;
-    backdrop-filter: blur(4px);
-}
-
-#fullscreenModal.active { 
-    display: flex; 
-}
-
-.modal-box {
-    width: 90vw;
-    height: 90vh;
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    position: relative;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-}
-
-.modal-box .modal-header,
-.modal-box > div:first-child {
-    flex-shrink: 0;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 50px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.modal-box > div:first-child > div:first-child {
-    flex: 0 0 auto;
-    min-width: 150px;
-    font-weight: 600;
-}
-
-.modal-box > div:first-child > div:last-child {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.modal-box .modal-inner,
-.modal-box > div:last-child {
+#bigViewer {
     flex: 1;
-    overflow: hidden;
     position: relative;
-    width: 100%;
     background: #f1f5f9;
-}
-
-.modal-box iframe,
-.modal-box object,
-.modal-box embed,
-.modal-box img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-    border: none;
-}
-
-/* ========================= LOADING OVERLAY ========================= */
-.loading-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+#pdfWrapper, #pdfMain, #scrollContainer {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+    height: 100%;
+}
+
+#bigImageFrame {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* --- CHAT INTERFACE (WhatsApp Style) --- */
+#chatSidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#chatBox {
+    flex: 1 1 auto;
+    min-height: 0; /* Enables scroll */
+    overflow-y: auto;
+    padding: 12px;
+    background-color: #e5e5f7;
+    background-image: radial-gradient(#444cf7 0.5px, transparent 0.5px), radial-gradient(#444cf7 0.5px, #e5e5f7 0.5px);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+}
+
+#chatForm {
+    flex-shrink: 0;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Input Flexible */
+#chatInput {
+    flex: 1 1 auto;
+    min-width: 0; /* Prevents button push-off */
+}
+
+/* Send Button Fixed */
+.send-btn-container {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    z-index: 70;
+    background: #2563eb;
     color: white;
-}
-
-.share-btn {
-    display: inline-flex;
-    align-items: center;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s;
-    padding: 6px 12px;
-    border-radius: 6px;
 }
 
-.share-btn:hover {
-    background-color: #e2e8f0;
-    transform: translateY(-1px);
-}
-
-#analysisCancelBtn {
-    padding: 8px 16px;
-    background: #ef4444;
-    color: white;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-#analysisCancelBtn:hover {
-    background: #dc2626;
-}
-
-/* ========================= THUMBNAIL SCROLL ========================= */
-#thumbs {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 6px;
-    flex-shrink: 0;
-    max-height: 180px;
-}
-
-#thumbs > .thumb-item {
-    flex: 0 0 auto;
-}
-
-#thumbs::-webkit-scrollbar {
-    height: 8px;
-}
-
-#thumbs::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-}
-
-#thumbs::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-#thumbs::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-/* ========================= PDF WRAPPER ========================= */
-#pdfWrapper {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    overflow: hidden;
+/* Messages */
+.msg-bubble {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
     position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    word-wrap: break-word;
+}
+.msg-me {
+    background-color: #dcf8c6;
+    border-top-right-radius: 0;
+    margin-left: auto;
+}
+.msg-other {
+    background-color: white;
+    border-top-left-radius: 0;
+    margin-right: auto;
 }
 
-#pdfMain {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    min-height: 0;
-    padding: 16px;
-    background: #f8fafc;
+.analyse-btn{
+    background-color: #2563eb;
+    color: white;
 }
 
-#pdfMain canvas {
-    display: block;
-    margin: 0 auto 16px;
-    max-width: 100%;
-    height: auto;
+.analyse-btn:hover{
+    background-color: #4d52ad;
 }
 
-.pdf-scroll {
-    overscroll-behavior: contain;
-    touch-action: pan-y pinch-zoom;
-}
+/* ==========================================================================
+   4. RESPONSIVE BREAKPOINTS (The Logic)
+   ========================================================================== */
 
-/* =========================
-   RESPONSIVE BREAKPOINTS
-========================= */
-
-/* ================= MOBILE (<768px) ================= */
+/* --- MOBILE (Default < 768px) --- */
 @media (max-width: 767px) {
     .dashboard-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding-bottom: 80px; /* Space for mobile scrolling */
+    }
+
+    /* Stack order */
+    .dashboard-grid > aside:first-of-type { order: 1; max-height: 200px; } /* Files */
+    .dashboard-grid > section { order: 2; height: 500px; flex-shrink: 0; } /* Preview */
+    .dashboard-grid > aside:last-of-type { order: 3; height: 500px; flex-shrink: 0; } /* Chat */
+}
+
+/* --- TABLET PORTRAIT (768px - 1023px) --- */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .dashboard-grid {
+        display: flex;
+        flex-direction: column;
         height: auto;
         min-height: 100vh;
         overflow-y: auto;
     }
 
+    /* Files: Top strip */
     .dashboard-grid > aside:first-of-type {
-        position: relative;
-        z-index: 1;
-        height: auto;
+        height: 220px;
+        flex-shrink: 0;
     }
 
+    /* Preview: Middle large area */
     .dashboard-grid > section {
-        position: relative;
-        z-index: 2;
-        min-height: 500px;
-        height: auto;
-        max-width: 100%;
-        overflow: hidden;
+        height: 600px;
+        flex-shrink: 0;
     }
 
+    /* Chat: Bottom tall area (Fixes keyboard issue) */
     .dashboard-grid > aside:last-of-type {
-        position: relative;
-        z-index: 3;
-        height: auto;
-    }
-
-    #thumbs {
-        max-height: 150px;
-    }
-
-    .thumb-item {
-        width: 110px;
-        height: 110px;
-    }
-
-    button#openFullBtn {
-        display: none;
-    }
-
-    .preview-shell {
-        min-height: 400px;
-        height: 400px;
-    }
-
-    #bigViewer {
-        min-height: 350px;
-        height: 350px;
-    }
-
-    #pdfMain {
-        height: 100%;
+        height: 600px !important;
+        min-height: 600px;
+        flex-shrink: 0;
+        margin-bottom: 20px;
     }
 }
 
-/* ================= TABLET (768–1023px) ================= */
-@media (min-width: 768px) and (max-width: 1023px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-        height: auto;
-        min-height: calc(100vh - 64px);
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-
-    /* Left sidebar */
-    .dashboard-grid > aside:first-of-type {
-        max-height: 30vh;
-        overflow-y: auto;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1;
-        height: auto;
-    }
-
-    /* Center preview section */
-    .dashboard-grid > section {
-        padding: 12px;
-        min-height: 500px;
-        height: auto;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        z-index: 2;
-        max-width: 100%;
-    }
-
-    /* Preview shell */
-    .preview-shell {
-        flex: 1 1 auto;
-        min-height: 400px;
-        height: 450px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    /* Big viewer container */
-    #bigViewer {
-        flex: 1 1 auto;
-        min-height: 350px;
-        height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* PDF wrapper */
-    #pdfWrapper {
-        flex: 1 1 auto;
-        min-height: 0;
-        height: 100%;
-        display: flex;
-        overflow: hidden;
-    }
-
-    /* PDF scroll container */
-    #pdfMain {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        height: 100%;
-    }
-
-    /* Image frame */
-    #bigImageFrame {
-        max-width: 100%;
-        max-height: 100%;
-    }
-
-    /* Thumbnails strip */
-    #thumbs {
-        flex-shrink: 0;
-        max-height: 130px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        margin-bottom: 12px;
-    }
-
-    .thumb-item {
-        width: 110px;
-        height: 110px;
-    }
-
-    /* Right chat sidebar */
-    .dashboard-grid > aside:last-of-type {
-        max-height: 300px;
-        min-height: 250px;
-        flex: 0 0 auto;
-        overflow: hidden;
-        position: relative;
-        z-index: 3;
-        height: auto;
-    }
-
-    #chatBox {
-        overflow-y: auto;
-        flex: 1;
-        min-height: 0;
-    }
-
-    button#openFullBtn {
-        display: inline-block;
-    }
-
-    #bigPreviewHeader {
-        flex-shrink: 0;
-        padding: 8px 12px;
-    }
-}
-
-/* ================= DESKTOP (≥1024px) ================= */
+/* --- DESKTOP / LANDSCAPE TABLET (1024px - 1279px) --- */
 @media (min-width: 1024px) {
     .dashboard-grid {
-        grid-template-columns: 280px 1fr 320px;
-        height: calc(100vh - 64px);
-        overflow: hidden;
+        /* 3 Columns: Files | Preview | Chat */
+        /* Adjusted widths: Chat gets 380px as requested */
+        grid-template-columns: 260px 1fr 380px; 
+        grid-template-rows: 1fr;
+        height: calc(100vh - 80px); /* Subtract header height */
+        overflow: hidden; /* Lock the page scroll */
     }
 
+    /* Panels take full height */
     .dashboard-grid > aside,
     .dashboard-grid > section {
         height: 100%;
         overflow: hidden;
     }
 
-    section {
-        padding: 14px;
-        min-height: 0;
-    }
-
-    .preview-shell {
-        height: 100%;
-    }
-
-    #bigViewer {
-        height: 100%;
-    }
-
-    #thumbs {
-        max-height: 160px;
-    }
-
-    .thumb-item {
-        width: 140px;
-        height: 140px;
-    }
-
-    button#openFullBtn {
-        display: inline-block;
-    }
+    #thumbs { max-height: 180px; }
+    .thumb-item { width: 140px; height: 140px; }
 }
 
-/* ================= LARGE DESKTOP (1280–1535px) ================= */
+/* --- LARGE DESKTOP (1280px+) --- */
 @media (min-width: 1280px) {
     .dashboard-grid {
-        grid-template-columns: 24% 52% 24%;
-    }
-
-    .thumb-item {
-        width: 160px;
-        height: 180px;
+        /* Percentage based for wider screens */
+        grid-template-columns: 22% 50% 28%;
     }
 }
 
-/* ================= EXTRA LARGE SCREENS (1536px+) ================= */
-@media (min-width: 1536px) {
-    .thumb-item {
-        width: 200px;
-        height: 220px;
-    }
-}
-
-/* ================= PRINT ================= */
-@media print {
+/* --- EXTRA LARGE / 4K (1600px+) --- */
+@media (min-width: 1600px) {
     .dashboard-grid {
-        display: block;
+        max-width: 1800px; /* Limit max width for readability */
+        margin: 0 auto;
     }
+    .thumb-item { width: 160px; height: 160px; }
+}
 
-    aside,
-    #chatBox,
-    button {
-        display: none;
-    }
+/* --- PRINT STYLES --- */
+@media print {
+    .dashboard-grid { display: block; }
+    aside, #chatForm, .analyse-btn { display: none !important; }
+    section { border: none; box-shadow: none; }
+}
+
+/* --- LOADING SPINNER --- */
+.spinner {
+    width: 40px; height: 40px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: white; z-index: 9999;
+}
+
+/* --- MODAL STYLES --- */
+#fullscreenModal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(5px);
+}
+#fullscreenModal.active { display: flex; }
+
+.modal-box {
+    width: 95vw; height: 95vh;
+    background: white;
+    border-radius: 8px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+/* ================= MODAL ZOOM & SCALE FIXES ================= */
+
+/* 1. Reset Inner Padding */
+#modalBody.modal-inner {
+    padding: 0 !important; /* Remove wasted space */
+    background-color: #333; /* Dark background for better focus */
+}
+
+/* 2. PDF Page Styling */
+/* Ensure pages are centered and look like paper */
+#modalPdfContainer img {
+    max-width: none; /* Allow zooming beyond 100% */
+    width: 100%;     /* Default to fit width */
+    height: auto;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+    transition: width 0.2s ease-out; /* Smooth Zoom */
+}
+
+/* FORCE SCROLLING ON ZOOM */
+#imageZoomWrapper {
+    overflow: auto; /* Allow scrolling when image is big */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+#modalImage {
+    transition: width 0.2s ease-out; /* Smooth resizing */
+    flex-shrink: 0; /* CRITICAL: Prevents flexbox from squishing the image back down */
 }

@@ -2,95 +2,63 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import ChatMessage
-from django.contrib.auth import get_user_model
-from asgiref.sync import sync_to_async
-from .models import UserProfile
-User = get_user_model()
+from coreapi.models import UserProfile # Import User from coreapi
+from .models import ChatMessage       # Import ChatMessage from local app
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = "global"
-        self.room_group_name = f"chat_{self.room_name}"
+        self.room_group_name = "global_chat"
+        self.user = await self.get_user_from_session()
 
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        await self.accept()
+        if self.user:
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+            await self.accept()
+        else:
+            await self.close()
 
     async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-        
     async def receive(self, text_data):
         data = json.loads(text_data)
+        if not self.user: return
 
-        user = await sync_to_async(UserProfile.objects.get)(
-            user_name=data["user"]
+        # Save to DB
+        saved_msg = await self.save_message(
+            data.get('content', ''),
+            data.get('attached_type', 'none'),
+            data.get('attached_path'),
+            data.get('attached_label')
         )
 
-        msg = await sync_to_async(ChatMessage.objects.create)(
-            user=user,
-            content=data.get("content", ""),
-            message_type=data.get("attached_type", "text"),
-            file_path=data.get("attached_path")
-        )
-
-        payload = {
-            "user": user.user_name,
-            "content": msg.content,
-            "time": msg.created_at.strftime("%H:%M"),
-            "attached_type": data.get("attached_type"),
-            "attached_path": data.get("attached_path"),
-            "attached_label": data.get("attached_label"),
-        }
-
+        # Broadcast
         await self.channel_layer.group_send(
-            self.group_name,
+            self.room_group_name,
             {
-                "type": "broadcast_message",
-                **payload
+                'type': 'chat_message',
+                'id': saved_msg.id,
+                'user': self.user.user_name,
+                'content': saved_msg.content,
+                'attached_type': saved_msg.attached_type,
+                'attached_path': saved_msg.attached_path,
+                'attached_label': saved_msg.attached_label,
+                'time': saved_msg.created_at.strftime("%H:%M")
             }
         )
 
     async def chat_message(self, event):
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps(event["message"]))
+        await self.send(text_data=json.dumps(event))
 
     @database_sync_to_async
-    def save_message(self, data):
-        """Save message to database and return serialized data"""
-        user = self.scope["user"]
-        
-        # Get user profile - adjust based on your User model structure
-        try:
-            user_profile = user.user_profile
-            username = user_profile.user_name
-        except AttributeError:
-            username = user.username
-        
-        msg = ChatMessage.objects.create(
-            user=user_profile if hasattr(user, 'user_profile') else user,
-            content=data.get("content", ""),
-            attached_type=data.get("attached_type", "none"),
-            attached_path=data.get("attached_path"),
-            attached_label=data.get("attached_label"),
-            is_pinned=data.get("pin", False)
+    def get_user_from_session(self):
+        session = self.scope.get("session")
+        if not session or "user_id" not in session: return None
+        try: return UserProfile.objects.get(id=session["user_id"])
+        except UserProfile.DoesNotExist: return None
+
+    @database_sync_to_async
+    def save_message(self, content, att_type, path, label):
+        return ChatMessage.objects.create(
+            user=self.user, content=content,
+            attached_type=att_type, attached_path=path, attached_label=label
         )
-        
-        return {
-            "id": msg.id,
-            "user": username,
-            "content": msg.content,
-            "attached_type": msg.attached_type,
-            "attached_path": msg.attached_path,
-            "attached_label": msg.attached_label,
-            "is_pinned": msg.is_pinned,
-            "time": msg.created_at.strftime("%H:%M")
-        }

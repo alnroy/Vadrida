@@ -320,10 +320,14 @@ def serve_file(request):
 
     response = FileResponse(open(full_path, 'rb'), content_type=content_type)
     
-    # Force inline for PDFs (Preview), Attachment for others if needed
-    if 'pdf' in content_type:
-        response['Content-Disposition'] = 'inline'
-        
+    is_download = request.GET.get('download') == 'true'
+    
+    if is_download:
+        # Force browser to save file
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(full_path)}"'
+    elif 'pdf' in content_type:
+        # Otherwise, preview it
+        response['Content-Disposition'] = 'inline'  
     return response
 
 
@@ -368,6 +372,64 @@ def get_thumbnail(request):
         print(f"Thumbnail Error: {e}")
         # Return a 1x1 pixel empty image or 404 so browser shows default icon
         return HttpResponseNotFound()
+    
+
+# Add this function to views.py
+# It uses 'fitz' which you already imported
+
+@require_http_methods(["GET"])
+def render_pdf_page(request):
+    """
+    Renders a specific page of a PDF as an image (PNG).
+    Usage: /coreapi/render-page/?path=Folder/file.pdf&page=5&zoom=1.5
+    """
+    # 1. Get Parameters
+    rel_path = request.GET.get('path')
+    page_num = int(request.GET.get('page', 0))  # Default to Page 0 (First page)
+    zoom = float(request.GET.get('zoom', 1.0))  # Zoom level (1.0 = 100%, 2.0 = 200%)
+
+    if not rel_path:
+        return HttpResponseBadRequest("Missing path")
+
+    # 2. Construct Path
+    rel_path = unquote(rel_path)
+    full_path = os.path.normpath(os.path.join(settings.DOCUMENTS_ROOT, rel_path))
+
+    # 3. Security Check
+    if not full_path.startswith(os.path.normpath(settings.DOCUMENTS_ROOT)):
+        return HttpResponseNotFound("Access Denied")
+    
+    if not os.path.exists(full_path):
+        return HttpResponseNotFound("File not found")
+
+    try:
+        # 4. Open PDF with PyMuPDF
+        doc = fitz.open(full_path)
+        
+        # Validation
+        if page_num < 0 or page_num >= len(doc):
+             doc.close()
+             return HttpResponseNotFound("Page number out of range")
+
+        # 5. Render the Page
+        page = doc.load_page(page_num)
+        
+        # Matrix handles the Zoom/Quality
+        # 1.5 zoom is good balance of quality vs speed
+        mat = fitz.Matrix(zoom, zoom) 
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        
+        # 6. Convert to PNG bytes
+        img_data = pix.tobytes("png")
+        
+        doc.close()
+
+        # 7. Return Image
+        return HttpResponse(img_data, content_type="image/png")
+
+    except Exception as e:
+        print(f"PDF Render Error: {e}")
+        return HttpResponseBadRequest("Error rendering PDF")
 
 @require_http_methods(["GET"])
 def get_file_info(request):

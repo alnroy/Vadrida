@@ -89,15 +89,28 @@
             </button>
           </div>
 
-          <div id="bigViewer" class="preview-viewer">
-            <div id="noSelection" class="no-selection">
-              Select a file to preview
-            </div>
-            <div id="pdfWrapper" class="hidden pdf-container">
-              <div id="pdfMain" class="pdf-scroll-container"></div>
-            </div>
-            <img id="bigImageFrame" class="hidden preview-image" src="" alt="preview" />
-          </div>
+          <div id="bigViewer" class="relative h-full flex flex-col bg-gray-100">
+  
+  <div id="noSelection" class="flex items-center justify-center h-full text-gray-400">
+    Select a file to preview
+  </div>
+
+  <div id="pdfToolbar" class="hidden flex items-center justify-between px-4 py-2 bg-white border-b shadow-sm z-10">
+    <div class="text-sm font-semibold text-gray-600" id="pageCountDisplay">Page 1</div>
+    <div class="flex items-center gap-2">
+      <button id="pdfZoomOut" class="px-2 py-1 bg-gray-100 border rounded hover:bg-gray-200"><i class="fas fa-minus"></i></button>
+      <span id="zoomLevelDisplay" class="text-xs w-12 text-center">100%</span>
+      <button id="pdfZoomIn" class="px-2 py-1 bg-gray-100 border rounded hover:bg-gray-200"><i class="fas fa-plus"></i></button>
+    </div>
+  </div>
+
+  <div id="scrollContainer" class="hidden flex-1 overflow-y-auto p-4 flex flex-col items-center gap-4">
+     <div id="scrollSentinel" class="w-full h-20 flex items-center justify-center text-gray-400">
+        <div class="spinner border-4 border-gray-300 border-t-blue-500 rounded-full w-6 h-6 animate-spin"></div>
+     </div>
+  </div>
+
+</div>
         </div>
       </section>
     </div>
@@ -1291,25 +1304,90 @@ function renderFileList(folders, files) {
    5. THUMBNAILS & PREVIEWS
 ========================= */
 /* =========================
-   OPTIMIZED RENDER THUMBS (Sequential Loading)
+   SAFE THUMBNAIL LOADER (Queue System)
+   Prevents server freeze by loading only 3 images at a time.
 ========================= */
-async function renderThumbs(files) {
+const thumbQueue = [];
+let activeRequests = 0;
+const MAX_CONCURRENT = 3; // Only 3 G: Drive requests at once
+
+function processThumbQueue() {
+    // Stop if we are at the limit or queue is empty
+    if (activeRequests >= MAX_CONCURRENT || thumbQueue.length === 0) return;
+
+    // Get the next image waiting in line
+    const { imgElement, url, card } = thumbQueue.shift();
+    activeRequests++;
+
+    imgElement.onload = () => {
+        activeRequests--;
+        card.innerHTML = ""; // Remove spinner
+        card.appendChild(imgElement);
+        processThumbQueue(); // Call the next one!
+    };
+
+    imgElement.onerror = () => {
+        activeRequests--;
+        // Show fallback icon
+        let icon = "fa-file-image";
+        if(url.includes("pdf")) icon = "fa-file-pdf";
+        card.innerHTML = `<div class="file-icon"><i class="fas ${icon} text-red-400"></i></div>`;
+        processThumbQueue(); // Call the next one!
+    };
+
+    // ACTUALLY START THE DOWNLOAD HERE
+    imgElement.src = url;
+}
+
+function renderThumbs(files) {
   thumbsContainer.innerHTML = "";
+  
+  // Clear old queue so we don't load images from the previous folder
+  thumbQueue.length = 0; 
+  activeRequests = 0;
 
   if (!files.length) {
     thumbsContainer.innerHTML = `<div class="no-thumbs">No files to preview</div>`;
     return;
   }
 
-  // 1. Create the skeleton UI (All cards appear immediately with spinners)
-  const queue = files.map(file => {
+  files.forEach(file => {
     const card = document.createElement("div");
     card.className = "thumb-item";
-    
-    // Default Loading State
-    card.innerHTML = `<div class="file-icon"><i class="fas fa-spinner fa-spin"></i></div>`;
-    
-    // Click Event
+    // Show Spinner immediately
+    card.innerHTML = `<div class="file-icon"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>`;
+
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    // --- PREPARE IMAGE OBJECT (Don't set .src yet!) ---
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'pdf'].includes(ext)) {
+        const img = new Image();
+        img.className = "preview-thumb-img";
+        // Inline styles to ensure it fits
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "contain";
+
+        let url = "";
+        // Use your Python APIs
+        if (ext === 'pdf') {
+             url = `/coreapi/api/thumbnail/?path=${encodeURIComponent(file.path)}`;
+        } else {
+             url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+        }
+
+        // PUSH TO QUEUE INSTEAD OF LOADING
+        thumbQueue.push({ imgElement: img, url: url, card: card });
+    } 
+    else {
+        // Non-image files (Word/Excel) load instantly
+        let icon = "fa-file-alt";
+        if(['doc','docx'].includes(ext)) icon = "fa-file-word";
+        if(['xls','xlsx'].includes(ext)) icon = "fa-file-excel";
+        card.innerHTML = `<div class="file-icon"><i class="fas ${icon}"></i><br><span style="font-size:10px">${ext.toUpperCase()}</span></div>`;
+    }
+
+    // Click to Preview
     card.onclick = () => {
       document.querySelectorAll(".file-item").forEach(el => el.classList.remove("selected"));
       loadBigPreview(file);
@@ -1317,107 +1395,12 @@ async function renderThumbs(files) {
     };
 
     thumbsContainer.appendChild(card);
-    return { file, card };
   });
 
-  // 2. Process Queue SEQUENTIALLY (One by one)
-  // This prevents freezing the browser or choking the network
-  for (const item of queue) {
-    const { file, card } = item;
-    const ext = file.name.split(".").pop().toLowerCase();
-
-    // Small delay to let the UI breathe between heavy tasks
-    await new Promise(r => setTimeout(r, 50)); 
-
-    if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-      // Images are fast, let the browser handle them
-      const img = document.createElement("img");
-      img.src = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
-      img.loading = "lazy";
-      img.onload = () => { card.innerHTML = ""; card.appendChild(img); };
-      img.onerror = () => {
-        card.innerHTML = `<div class="file-icon"><i class="fas fa-image"></i><br>${ext.toUpperCase()}</div>`;
-      };
-    }
-    else if (ext === "pdf") {
-      // PDF: We await this, so the next one doesn't start until this finishes
-      await renderPdfThumbnail(file, card);
-    }
-    else {
-      // Generic Icon
-      card.innerHTML = `
-        <div class="file-icon">
-          <i class="fas fa-file-alt"></i><br>${ext.toUpperCase()}
-        </div>
-      `;
-    }
-  }
-}
-
-/* =========================
-   OPTIMIZED PDF RENDERER (With Timeout & Cleanup)
-========================= */
-async function renderPdfThumbnail(file, container) {
-  let pdf = null;
-  try {
-    // 1. Ensure PDF.js is loaded
-    await loadPdfJsIfNeeded();
-
-    // 2. Add a Timeout Race 
-    // If a PDF takes > 10 seconds, stop trying and show an icon.
-    const url = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
-    
-    const loadingTask = pdfjsLib.getDocument(url);
-    
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout")), 10000)
-    );
-
-    // Race the download against the timeout
-    pdf = await Promise.race([loadingTask.promise, timeoutPromise]);
-
-    // 3. Render Page 1
-    const page = await pdf.getPage(1);
-
-    // Optimize Scale: Don't render huge canvases for small thumbs
-    // Scale 0.5 is usually plenty for a thumbnail
-    const viewport = page.getViewport({ scale: 0.5 }); 
-
-    const canvas = document.createElement("canvas");
-    canvas.style.width = "100%"; 
-    canvas.style.height = "auto";
-    canvas.style.display = "block";
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    await page.render({
-      canvasContext: ctx,
-      viewport: viewport
-    }).promise;
-
-    // 4. Success!
-    container.innerHTML = ""; 
-    container.appendChild(canvas);
-
-  } catch (error) {
-    console.error("Error rendering PDF thumb:", file.name, error);
-    // Fallback icon
-    container.innerHTML = `
-      <div class="file-icon" style="color: #ef4444;">
-        <i class="fas fa-file-pdf"></i><br>PDF
-      </div>
-    `;
-  } finally {
-    // 5. CRITICAL: Destroy the PDF to free memory
-    if (pdf) {
-        // pdf.js v3+ uses destroy(), older versions used cleanup()
-        if (pdf.destroy) pdf.destroy(); 
-        else if (pdf.cleanup) pdf.cleanup();
-    }
-  }
+  // Start 3 workers
+  processThumbQueue();
+  processThumbQueue();
+  processThumbQueue();
 }
 function loadBigPreview(file) {
   currentFile = file;
@@ -1459,64 +1442,6 @@ function setFileInfo(file) {
 /* =========================
    6. PDF & ANALYSIS TOOLS
 ========================= */
-/* =========================
-   RENDER PDF (High Scale / Fit Width)
-========================= */
-async function renderFullPdf(url, targetContainer = null) {
-  try {
-    await loadPdfJsIfNeeded();
-    
-    // Default to sidebar if no container specified
-    const container = targetContainer || document.getElementById("pdfMain");
-    
-    // Show loading state
-    container.innerHTML = '<div style="color:white; text-align:center; padding:20px;">Loading PDF...</div>';
-
-    const pdf = await pdfjsLib.getDocument(url).promise;
-    container.innerHTML = ""; // Clear loader
-
-    // --- NEW SCALING LOGIC: FIT WIDTH ---
-    const page1 = await pdf.getPage(1);
-    
-    // Get the width of the grey viewer box
-    // We use 'bigViewer' because 'container' might be shrinking to fit content
-    const viewerContainer = document.getElementById('bigViewer');
-    const availableWidth = viewerContainer.clientWidth - 40; // Subtract padding
-    
-    const unscaledViewport = page1.getViewport({ scale: 1 });
-    
-    // Calculate scale to fill the width
-    let scale = availableWidth / unscaledViewport.width;
-    
-    // Force a minimum scale if "Fit Width" is still too small
-    // (e.g., never render smaller than 1.25x zoom)
-    if (scale < 1.25) scale = 1.25; 
-
-    // --- RENDER ALL PAGES ---
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: scale });
-
-      const cvs = document.createElement("canvas");
-      cvs.width = viewport.width;
-      cvs.height = viewport.height;
-      
-      // Styling to make pages distinct
-      cvs.style.marginBottom = "10px";
-      cvs.style.display = "block";
-      cvs.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-      cvs.style.backgroundColor = "white";
-
-      // Render
-      await page.render({ canvasContext: cvs.getContext("2d"), viewport }).promise;
-      container.appendChild(cvs);
-    }
-  } catch (error) {
-    console.error("PDF Error:", error);
-    const container = targetContainer || document.getElementById("pdfMain");
-    container.innerHTML = `<div class="error" style="color:white;">Error loading PDF</div>`;
-  }
-}
 function loadPdfJsIfNeeded() {
   if (window.pdfjsLib) return Promise.resolve();
   return new Promise((resolve) => {
@@ -1672,58 +1597,13 @@ refreshBtn.onclick = () => {
 /* =========================
    7. MODAL & PREVIEW UI
 ========================= */
-const fullscreenModal = document.getElementById("fullscreenModal");
-const modalFrame = document.getElementById("modalFrame");
-const modalImage = document.getElementById("modalImage");
-
-document.getElementById("openFullBtn").onclick = () => {
-  if (!currentFile) return alert("Select a file");
-
-  // Mobile Handling
-  if (window.innerWidth < 768) {
-    window.open(currentPreviewUrl, "_blank");
-    return;
-  }
-
-  // 1. Show Modal
-  fullscreenModal.setAttribute("aria-hidden", "false");
-
-  // 2. Reset All Containers
-  modalFrame.classList.add("hidden");
-  modalImage.classList.add("hidden");
-  const pdfContainer = document.getElementById("modalPdfContainer");
-  pdfContainer.classList.add("hidden");
-  pdfContainer.innerHTML = ""; // Clear previous PDF
-
-  const ext = currentFile.name.split(".").pop().toLowerCase();
-
-  // 3. Route based on file type
-  if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-    // IMAGE
-    modalImage.src = currentPreviewUrl;
-    modalImage.classList.remove("hidden");
-  } 
-  else if (ext === 'pdf') {
-    // PDF (Use our renderer, not iframe)
-    pdfContainer.classList.remove("hidden");
-    renderFullPdf(currentPreviewUrl, pdfContainer);
-  } 
-  else {
-    // OTHER (Text, etc.) - Try Iframe
-    modalFrame.src = currentPreviewUrl;
-    modalFrame.classList.remove("hidden");
-  }
-};
 
 document.getElementById("modalClose").onclick = () => {
   fullscreenModal.setAttribute("aria-hidden", "true");
   modalFrame.src = ""; modalImage.src = "";
 };
 
-const modalDownloadBtn = document.getElementById("modalDownloadBtn");
-modalDownloadBtn.onclick = () => {
-  if (currentFile) window.location.href = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
-};
+
 
 
 // Enforce Landscape
@@ -3201,6 +3081,462 @@ function toggleSketchSidebar() {
     // IMPORTANT: Wait for CSS transition (300ms) then resize canvas
     setTimeout(resizeCanvas, 310);
 }
+
+
+/* ==========================================
+   SERVER-SIDE INFINITE SCROLL PDF VIEWER
+   ========================================== */
+
+// State
+let viewerState = {
+    path: null,
+    nextPageToLoad: 0,
+    zoom: 1.0,
+    isLoading: false,
+    isFinished: false // True when we hit the last page
+};
+
+// Elements
+const scrollContainer = document.getElementById("scrollContainer");
+const scrollSentinel = document.getElementById("scrollSentinel"); // The loading spinner at bottom
+const pdfToolbar = document.getElementById("pdfToolbar");
+const pageCountDisplay = document.getElementById("pageCountDisplay");
+const zoomLevelDisplay = document.getElementById("zoomLevelDisplay");
+
+// --- 1. INITIALIZE PREVIEW ---
+function loadBigPreview(file) {
+    currentFile = file;
+    
+    // Reset State
+    viewerState.path = file.path;
+    viewerState.nextPageToLoad = 0;
+    viewerState.isLoading = false;
+    viewerState.isFinished = false;
+
+    // Reset UI
+    document.getElementById("bigPreviewTitle").textContent = file.name;
+    document.getElementById("noSelection").classList.add("hidden");
+    document.getElementById("downloadPdfBtn").classList.remove("hidden");
+    
+    // Clear previous pages (Keep only the sentinel)
+    // We remove all img elements before the sentinel
+    const existingImages = scrollContainer.querySelectorAll('img.pdf-page-img');
+    existingImages.forEach(img => img.remove());
+
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    // CASE A: PDF (Vertical Scroll)
+    if (ext === "pdf") {
+        scrollContainer.classList.remove("hidden");
+        pdfToolbar.classList.remove("hidden");
+        scrollSentinel.classList.remove("hidden"); // Show spinner
+        
+        // Start observing for scroll
+        observer.observe(scrollSentinel);
+        
+        // Load Page 0 immediately
+        loadNextPage();
+    } 
+    // CASE B: Image
+    else if (["jpg", "jpeg", "png", "gif"].includes(ext)) {
+        scrollContainer.classList.remove("hidden");
+        pdfToolbar.classList.add("hidden");
+        scrollSentinel.classList.add("hidden"); // No infinite scroll for single images
+        
+        const img = createPageImage(0, true); // True = is single image
+        img.src = `/coreapi/serve-file/?path=${encodeURIComponent(file.path)}`;
+        scrollContainer.insertBefore(img, scrollSentinel);
+    }
+    else {
+        scrollContainer.classList.add("hidden");
+        document.getElementById("noSelection").classList.remove("hidden");
+        document.getElementById("noSelection").textContent = "Preview not available.";
+    }
+}
+
+// --- 2. LOAD NEXT PAGE LOGIC ---
+function loadNextPage() {
+    if (viewerState.isLoading || viewerState.isFinished) return;
+    
+    viewerState.isLoading = true;
+
+    // specific page index to load
+    const pageIndex = viewerState.nextPageToLoad;
+    
+    // Create the image element placeholder
+    const img = createPageImage(pageIndex);
+    
+    // Construct Backend URL
+    // Note: We use the 'render-page' view we created earlier
+    const url = `/coreapi/render-page/?path=${encodeURIComponent(viewerState.path)}&page=${pageIndex}&zoom=${viewerState.zoom}`;
+
+    img.onload = () => {
+        viewerState.isLoading = false;
+        viewerState.nextPageToLoad++; // Prepare for next page
+        
+        // Update "Page X" display based on what is currently loaded
+        pageCountDisplay.textContent = `Pages loaded: ${viewerState.nextPageToLoad}`;
+        
+        // If the Sentinel is still visible (big screen, small PDF), load another one immediately
+        // This prevents getting stuck with only 1 page on a large monitor
+        if (isSentinelVisible()) {
+            loadNextPage();
+        }
+    };
+
+    img.onerror = () => {
+        // ERROR usually means 404 Not Found -> End of Document
+        console.log("End of document reached or error.");
+        viewerState.isFinished = true;
+        viewerState.isLoading = false;
+        img.remove(); // Remove the broken image
+        scrollSentinel.classList.add("hidden"); // Hide the spinner
+        observer.unobserve(scrollSentinel); // Stop watching
+    };
+
+    img.src = url;
+    
+    // Insert before the spinner
+    scrollContainer.insertBefore(img, scrollSentinel);
+}
+
+// --- 3. HELPER: CREATE IMAGE ELEMENT ---
+function createPageImage(index, isSingle = false) {
+    const img = document.createElement("img");
+    img.className = "pdf-page-img shadow-lg bg-white mb-4 transition-transform duration-200";
+    img.alt = `Page ${index + 1}`;
+    img.dataset.page = index;
+    
+    // Styles for nice paper look
+    img.style.minHeight = isSingle ? "auto" : "800px"; // Placeholder height prevents jumpiness
+    img.style.minWidth = "600px";
+    img.style.maxWidth = "100%";
+    
+    if (isSingle) img.style.minHeight = "auto";
+
+    return img;
+}
+
+// --- 4. INTERSECTION OBSERVER (Auto-Scroll) ---
+// This watches the "spinner" at the bottom. When it appears on screen, it triggers loadNextPage()
+const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+        loadNextPage();
+    }
+}, { root: scrollContainer, threshold: 0.1 });
+
+function isSentinelVisible() {
+    const rect = scrollSentinel.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    return (rect.top <= containerRect.bottom);
+}
+
+// --- 5. ZOOM CONTROLS ---
+// Since we have many images, we update CSS transform for all of them
+function updateZoom() {
+    const images = document.querySelectorAll('.pdf-page-img');
+    images.forEach(img => {
+        // We use CSS width % to handle zoom cleanly in a flex column
+        // Base is 100% (fit width). 
+        // Note: Real PDF viewers re-render at higher resolution on zoom. 
+        // For simple CSS zoom:
+        img.style.width = `${100 * viewerState.zoom}%`;
+        img.style.maxWidth = "none"; // Allow it to overflow container if zoomed in
+    });
+    
+    // Also re-render future pages at higher quality? 
+    // For now, let's stick to CSS scaling for instant feedback.
+    // If you want higher quality, we'd need to clear list and re-fetch with &zoom=X parameter.
+    
+    zoomLevelDisplay.textContent = `${Math.round(viewerState.zoom * 100)}%`;
+}
+
+document.getElementById("pdfZoomIn").onclick = () => {
+    if (viewerState.zoom < 2.0) {
+        viewerState.zoom += 0.25;
+        updateZoom();
+    }
+};
+
+document.getElementById("pdfZoomOut").onclick = () => {
+    if (viewerState.zoom > 0.5) {
+        viewerState.zoom -= 0.25;
+        updateZoom();
+    }
+};
+
+
+/* ==========================================
+   UPDATED: FULLSCREEN MODAL LOGIC (Server-Side Sync)
+   ========================================== */
+
+const fullscreenModal = document.getElementById("fullscreenModal");
+const modalFrame = document.getElementById("modalFrame");
+const modalImage = document.getElementById("modalImage");
+const modalPdfContainer = document.getElementById("modalPdfContainer");
+const modalTitle = document.getElementById("modalTitle");
+
+// 1. Modal State
+let modalState = {
+    path: null,
+    nextPage: 0,
+    isLoading: false,
+    isFinished: false, // True when we hit the last page
+    observer: null
+};
+
+// 2. Open Modal Button Logic
+document.getElementById("openFullBtn").onclick = () => {
+    if (!currentFile) {
+        alert("Select a file first");
+        return;
+    }
+
+    // A. Show Modal
+    const fullscreenModal = document.getElementById("fullscreenModal");
+    const modalTitle = document.getElementById("modalTitle");
+    fullscreenModal.setAttribute("aria-hidden", "false");
+    modalTitle.textContent = currentFile.name;
+
+    // B. Reset Containers
+    const modalFrame = document.getElementById("modalFrame");
+    const modalImage = document.getElementById("modalImage");
+    const modalPdfContainer = document.getElementById("modalPdfContainer");
+
+    modalFrame.classList.add("hidden");
+    modalImage.classList.add("hidden");
+    modalPdfContainer.classList.add("hidden");
+    modalPdfContainer.innerHTML = ""; // Wipe old pages
+
+    const ext = currentFile.name.split(".").pop().toLowerCase();
+    modalState.path = currentFile.path;
+
+    // --- CASE 1: PDF (Infinite Scroll) ---
+    if (ext === 'pdf') {
+        modalPdfContainer.classList.remove("hidden");
+        
+        // Reset State
+        modalState.nextPage = 0;
+        modalState.isLoading = false;
+        modalState.isFinished = false;
+
+        // Create the "Sentinel" (The Spinner at the bottom)
+        const sentinel = document.createElement("div");
+        sentinel.id = "modalSentinel";
+        sentinel.className = "w-full h-24 flex items-center justify-center py-4";
+        sentinel.innerHTML = '<div class="spinner border-4 border-gray-300 border-t-blue-500 rounded-full w-8 h-8 animate-spin"></div>';
+        modalPdfContainer.appendChild(sentinel);
+
+        // Disconnect old observer if exists
+        if (modalState.observer) modalState.observer.disconnect();
+
+        // Create New Observer
+        // When 'sentinel' is visible inside 'modalPdfContainer', load next page
+        modalState.observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadNextModalPage(sentinel);
+            }
+        }, { 
+            root: modalPdfContainer, // IMPORTANT: The scrollable container
+            threshold: 0.1 
+        });
+
+        // Start watching
+        modalState.observer.observe(sentinel);
+        
+        // Trigger first load immediately
+        loadNextModalPage(sentinel);
+    } 
+    
+    // --- CASE 2: IMAGE ---
+    else if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+        modalImage.src = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}`;
+        modalImage.classList.remove("hidden");
+    } 
+    
+    // --- CASE 3: OTHER ---
+    else {
+        modalPdfContainer.classList.remove("hidden");
+        modalPdfContainer.innerHTML = `
+            <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">
+                <i class="fas fa-file-alt" style="font-size:48px; margin-bottom:15px;"></i>
+                <p>Preview not available.</p>
+                <button onclick="triggerDownload()" style="margin-top:10px; padding:8px 16px; background:#2563eb; color:white; border-radius:6px;">Download File</button>
+            </div>
+        `;
+    }
+};
+
+// 3. The Page Loader Function
+function loadNextModalPage(sentinel) {
+    if (modalState.isLoading || modalState.isFinished) return;
+
+    modalState.isLoading = true;
+    
+    // Create Image Element
+    const img = document.createElement("img");
+    img.style.width = "auto";
+    img.style.maxWidth = "100%";
+    img.style.marginBottom = "10px";
+    img.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+    img.style.minHeight = "400px"; // Placeholder height to prevent jitter
+    img.style.backgroundColor = "white";
+    
+    // Request High Quality Page (Zoom 1.5)
+    img.src = `/coreapi/render-page/?path=${encodeURIComponent(modalState.path)}&page=${modalState.nextPage}&zoom=1.5`;
+
+    img.onload = () => {
+        modalState.isLoading = false;
+        modalState.nextPage++;
+        
+        // If the page loaded very fast and the spinner is still visible (large screens), load another one
+        // This prevents getting stuck on Page 1 if Page 1 is short
+        if(modalState.observer && sentinel.getBoundingClientRect().top < window.innerHeight) {
+             loadNextModalPage(sentinel);
+        }
+    };
+
+    img.onerror = () => {
+        // Error 404 usually means we reached the end of the PDF
+        console.log("End of document.");
+        modalState.isFinished = true;
+        modalState.isLoading = false;
+        sentinel.remove(); // Remove spinner
+        if(modalState.observer) modalState.observer.disconnect();
+    };
+
+    // Insert Image BEFORE the spinner
+    const container = document.getElementById("modalPdfContainer");
+    container.insertBefore(img, sentinel);
+}
+
+// 4. Close Modal Cleanup
+document.getElementById("modalClose").onclick = () => {
+    document.getElementById("fullscreenModal").setAttribute("aria-hidden", "true");
+    
+    // Clean up memory
+    document.getElementById("modalImage").src = "";
+    document.getElementById("modalPdfContainer").innerHTML = "";
+    if (modalState.observer) modalState.observer.disconnect();
+};
+/* ==========================================
+   UPDATED: DOWNLOAD BUTTONS
+   ========================================== */
+
+// 1. Dashboard Download Button (Small icon in header)
+document.getElementById("downloadPdfBtn").onclick = (e) => {
+    e.stopPropagation(); // Prevent glitches
+    triggerDownload();
+};
+
+// 2. Modal Download Button (Big button in modal)
+document.getElementById("modalDownloadBtn").onclick = () => {
+    triggerDownload();
+};
+
+// Shared Download Function
+function triggerDownload() {
+    if (!currentFile) {
+        alert("No file selected.");
+        return;
+    }
+    // Points to the standard serve-file view with download=true
+    const url = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+    window.location.href = url;
+}
+
+/* =========================
+   ADVANCED FILE SHARING (Sends Actual File)
+========================= */
+
+// 1. Get Elements
+const modalShareBtn = document.getElementById("modalShare");
+const shareButtonsContainer = document.getElementById("shareButtonsContainer");
+const modalDownloadBtn = document.getElementById("modalDownloadBtn");
+
+// 2. Main Share Button Logic
+modalShareBtn.onclick = async (e) => {
+  e.preventDefault();
+  
+  if (!currentFile) return alert("No file selected");
+
+  const originalText = modalShareBtn.innerHTML;
+  
+  // Visual Feedback: Show user we are preparing the file
+  modalShareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+  modalShareBtn.style.pointerEvents = "none"; // Prevent double click
+
+  try {
+      // A. Construct the Download URL
+      const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+
+      // B. Fetch the file data (Blob) from your server
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+
+      // C. Create a Virtual File object
+      // We use the correct MIME type (pdf, jpg, etc.)
+      const fileObj = new File([blob], currentFile.name, { type: blob.type });
+
+      // D. Check if the Device supports File Sharing
+      if (navigator.canShare && navigator.canShare({ files: [fileObj] })) {
+          
+          // --- SUCCESS: Share the Actual File ---
+          await navigator.share({
+              files: [fileObj],
+              title: currentFile.name,
+              text: 'Here is the file.'
+          });
+          
+      } else {
+          // --- FALLBACK: Device doesn't support file sharing (e.g. Desktop) ---
+          // We revert to the Link menu, but we tell the user why
+          shareButtonsContainer.classList.toggle("hidden");
+          
+          // Still update links just in case they want to send the link instead
+          const fileLink = window.location.origin + `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}`;
+          updateShareLinks(fileLink);
+      }
+
+  } catch (err) {
+      console.log('Share failed or canceled:', err);
+      // If user canceled share, do nothing. If error, maybe show alert.
+      if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+          alert("Could not share file directly. Try downloading it first.");
+      }
+  } finally {
+      // Reset Button
+      modalShareBtn.innerHTML = originalText;
+      modalShareBtn.style.pointerEvents = "auto";
+  }
+};
+
+// 3. Fallback Links (Only used if File Sharing fails/Desktop)
+function updateShareLinks(url) {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedText = encodeURIComponent("Check this document: " + currentFile.name);
+
+  // Note: These CANNOT attach files. This is a browser limitation.
+  document.getElementById("shareWhatsapp").href = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+  document.getElementById("shareTelegram").href = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+  document.getElementById("shareEmail").href = `mailto:?subject=${encodeURIComponent(currentFile.name)}&body=${encodedText}%20${encodedUrl}`;
+
+  document.getElementById("shareCopy").onclick = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(url).then(() => {
+        alert("Link copied to clipboard!");
+        shareButtonsContainer.classList.add("hidden");
+    });
+  };
+}
+
+// 4. Download Button Logic
+modalDownloadBtn.onclick = (e) => {
+  e.preventDefault();
+  if (!currentFile) return alert("No file selected");
+  const downloadUrl = `/coreapi/serve-file/?path=${encodeURIComponent(currentFile.path)}&download=true`;
+  window.location.href = downloadUrl;
+};
 </script>
 
 {% endblock %}
